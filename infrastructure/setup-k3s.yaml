@@ -1,0 +1,44 @@
+---
+- name: Bootstrap
+  hosts: all 
+  become: true
+  gather_facts: yes
+
+  tasks:
+    # -----------------------------------------------------------------
+    # Task 1: k3s 바이너리 설치
+    # -----------------------------------------------------------------
+    - name: 1. k3s 초경량 핵심 엔진 설치 (불필요한 컴포넌트 비활성화 및 TLS 설정)
+      shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik --disable metrics-server --disable local-storage --tls-san {{ ansible_host }} --node-name {{ inventory_hostname }}" sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    # -----------------------------------------------------------------
+    # Task 2: 일반 유저 환경 세팅
+    # -----------------------------------------------------------------
+    - name: 2. 현재 접속 유저의 홈 디렉토리에 .kube 폴더 생성
+      file:
+        path: "/home/{{ ansible_user }}/.kube"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: 3. 쿠버네티스 인증 설정 파일(k3s.yaml)을 유저 폴더로 복사
+      copy:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "/home/{{ ansible_user }}/.kube/config"
+        remote_src: true
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0600'
+
+    # -----------------------------------------------------------------
+    # Task 3: k3s 서비스 정상 기동 확인
+    # -----------------------------------------------------------------
+    - name: 4. k3s 서비스가 정상적으로 활성화 및 동작 중인지 상태 검증
+      systemd:
+        name: k3s
+        state: started
+        enabled: true
