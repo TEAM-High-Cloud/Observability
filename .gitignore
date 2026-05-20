@@ -4,3 +4,6 @@ infrastructure/inventory.ini
 # Ansible group_vars info.
 infrastructure/group_vars/all.yaml
 infrastructure/group_vars/onprem_pcs.yaml
+
+# Ansible command memo
+ansible-command.txt
