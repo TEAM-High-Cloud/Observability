@@ -16,6 +16,10 @@ vmsingle:
             requests:
               storage: 10Gi
 
+grafana:
+  enabled: true
+  defaultDashboardsEnabled: false
+
 nodeExporter:
   enabled: false
 
@@ -23,4 +27,15 @@ kubeStateMetrics:
   enabled: false
 
 vmagent:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+prometheusOperator:
   enabled: false
