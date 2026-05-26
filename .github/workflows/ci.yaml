@@ -28,29 +28,34 @@ jobs:
           helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
 
-      - name: Helm Lint Validation
+      - name: Helm Template Validation
         run: |
-          # 메트릭 서버 검사
+          # 메트릭 서버 검사 (helm lint 대신 helm template 사용)
           if [ -f apps/metric-server/values.yaml ]; then
-            helm lint victoriametrics/victoria-metrics-k8s-stack --values apps/metric-server/values.yaml
+            echo "Validating VictoriaMetrics Stack..."
+            helm template victoriametrics/victoria-metrics-k8s-stack --values apps/metric-server/values.yaml --validate > /dev/null
           fi
 
           # 대시보드 서버 검사
           if [ -f apps/dashboard-server/grafana-values.yaml ]; then
-            helm lint grafana/grafana --values apps/dashboard-server/grafana-values.yaml
+            echo "Validating Grafana..."
+            helm template grafana/grafana --values apps/dashboard-server/grafana-values.yaml --validate > /dev/null
           fi
 
           # 로그 서버 검사
           if [ -f apps/log-server/loki-values.yaml ]; then
-            helm lint grafana/loki --values apps/log-server/loki-values.yaml
+            echo "Validating Loki..."
+            helm template grafana/loki --values apps/log-server/loki-values.yaml --validate > /dev/null
           fi
 
           # PC1 OTel 검사
           if [ -f apps/openstack-nodes/pc1-controller/otel-config.yaml ]; then
-            helm lint open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc1-controller/otel-config.yaml
+            echo "Validating PC1 OTel Collector..."
+            helm template open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc1-controller/otel-config.yaml --validate > /dev/null
           fi
 
           # PC2 OTel 검사
           if [ -f apps/openstack-nodes/pc2-controller/otel-config.yaml ]; then
-            helm lint open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc2-controller/otel-config.yaml
+            echo "Validating PC2 OTel Collector..."
+            helm template open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc2-controller/otel-config.yaml --validate > /dev/null
           fi
