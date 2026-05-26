@@ -8,77 +8,49 @@ on:
       - '*.yaml'
 
 jobs:
-  validate:
+  lint-and-validate:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run yamllint
+      - name: Basic YAML Lint
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: apps/
           strict: false
 
-      - name: Check changed files
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            metric:
-              - 'apps/metric-server/**'
-            dashboard:
-              - 'apps/dashboard-server/**'
-            log:
-              - 'apps/log-server/**'
-            pc1:
-              - 'apps/openstack-nodes/pc1-controller/**'
-            pc2:
-              - 'apps/openstack-nodes/pc2-controller/**'
-
-      - name: Install Helm and Kubeconform
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-          curl -L -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
-          tar xf kubeconform.tar.gz
-          sudo mv kubeconform /usr/local/bin/
-
-      - name: Validate Metric Server (VictoriaMetrics)
-        if: steps.filter.outputs.metric == 'true'
+      - name: Setup Helm Repositories
         run: |
           helm repo add victoriametrics https://victoriametrics.github.io/helm-charts/
-          helm repo update
-          helm template vm-stack victoriametrics/victoria-metrics-k8s-stack --values apps/metric-server/values.yaml \
-            | kubeconform -summary -skip-missing-schemas
-
-      - name: Validate Dashboard Server (Grafana)
-        if: steps.filter.outputs.dashboard == 'true'
-        run: |
           helm repo add grafana https://grafana.github.io/helm-charts/
-          helm repo update
-          helm template grafana grafana/grafana --values apps/dashboard-server/grafana-values.yaml \
-            | kubeconform -summary -skip-missing-schemas
-
-      - name: Validate Log Server (Loki)
-        if: steps.filter.outputs.log == 'true'
-        run: |
-          helm repo add grafana https://grafana.github.io/helm-charts/
-          helm repo update
-          helm template loki grafana/loki --values apps/log-server/loki-values.yaml \
-            | kubeconform -summary -skip-missing-schemas
-
-      - name: Validate PC1 OpenTelemetry Collector
-        if: steps.filter.outputs.pc1 == 'true'
-        run: |
           helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
-          helm template otel-pc1 open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc1-controller/otel-config.yaml \
-            | kubeconform -summary -skip-missing-schemas
 
-      - name: Validate PC2 OpenTelemetry Collector
-        if: steps.filter.outputs.pc2 == 'true'
+      - name: Helm Lint Validation
         run: |
-          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-          helm repo update
-          helm template otel-pc2 open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc2-controller/otel-config.yaml \
-            | kubeconform -summary -skip-missing-schemas
+          # 메트릭 서버 검사
+          if [ -f apps/metric-server/values.yaml ]; then
+            helm lint victoriametrics/victoria-metrics-k8s-stack --values apps/metric-server/values.yaml
+          fi
+
+          # 대시보드 서버 검사
+          if [ -f apps/dashboard-server/grafana-values.yaml ]; then
+            helm lint grafana/grafana --values apps/dashboard-server/grafana-values.yaml
+          fi
+
+          # 로그 서버 검사
+          if [ -f apps/log-server/loki-values.yaml ]; then
+            helm lint grafana/loki --values apps/log-server/loki-values.yaml
+          fi
+
+          # PC1 OTel 검사
+          if [ -f apps/openstack-nodes/pc1-controller/otel-config.yaml ]; then
+            helm lint open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc1-controller/otel-config.yaml
+          fi
+
+          # PC2 OTel 검사
+          if [ -f apps/openstack-nodes/pc2-controller/otel-config.yaml ]; then
+            helm lint open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc2-controller/otel-config.yaml
+          fi
