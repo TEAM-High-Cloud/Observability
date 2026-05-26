@@ -1,0 +1,24 @@
+victoria-metrics-operator:
+  enabled: true
+
+vmsingle:
+  enabled: true
+  spec:
+    retentionPeriod: "14d"
+    replicaCount: 1
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: "local-path"
+          resources:
+            requests:
+              storage: 10Gi
+
+nodeExporter:
+  enabled: false
+
+kubeStateMetrics:
+  enabled: false
+
+vmagent:
+  enabled: false
