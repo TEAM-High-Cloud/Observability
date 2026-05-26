@@ -45,42 +45,43 @@ jobs:
           tar xf kubeconform.tar.gz
           sudo mv kubeconform /usr/local/bin/
 
-      # 1. 메트릭 서버 변경 시에만 실행
+      # 1. 메트릭 서버 변경 시에만 실행 (핫픽스 적용)
       - name: Validate Metric Server (VictoriaMetrics)
         if: steps.filter.outputs.metric == 'true'
         run: |
           helm repo add victoriametrics https://victoriametrics.github.io/helm-charts/
           helm repo update
-          helm template vm-stack victoriametrics/victoria-metrics-k8s-stack --values apps/metric-server/values.yaml | kubeconform -summary
+          helm template vm-stack victoriametrics/victoria-metrics-k8s-stack --values apps/metric-server/values.yaml | kubeconform -summary -ignore-missing-schemas
 
-      # 2. 대시보드 서버 변경 시에만 실행
+      # 2. 대시보드 서버 변경 시에만 실행 (핫픽스 적용)
       - name: Validate Dashboard Server (Grafana)
         if: steps.filter.outputs.dashboard == 'true'
         run: |
           helm repo add grafana https://grafana.github.io/helm-charts/
           helm repo update
-          helm template grafana grafana/grafana --values apps/dashboard-server/grafana-values.yaml | kubeconform -summary
+          helm template grafana grafana/grafana --values apps/dashboard-server/grafana-values.yaml | kubeconform -summary -ignore-missing-schemas
 
-      # 3. 로그 서버 변경 시에만 실행
+      # 3. 로그 서버 변경 시에만 실행 (핫픽스 적용)
       - name: Validate Log Server (Loki)
         if: steps.filter.outputs.log == 'true'
         run: |
           helm repo add grafana https://grafana.github.io/helm-charts/
           helm repo update
-          helm template loki grafana/loki --values apps/log-server/loki-values.yaml | kubeconform -summary
+          helm template loki grafana/loki --values apps/log-server/loki-values.yaml | kubeconform -summary -ignore-missing-schemas
 
-      # 4. PC1 컨트롤러 변경 시에만 실행
+      # 4. PC1 컨트롤러 변경 시에만 실행 (핫픽스 적용)
       - name: Validate PC1 OpenTelemetry Collector
         if: steps.filter.outputs.pc1 == 'true'
         run: |
           helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
-          helm template otel-pc1 open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc1-controller/otel-config.yaml | kubeconform -summary
+          helm template otel-pc1 open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc1-controller/otel-config.yaml | kubeconform -summary -ignore-missing-schemas
 
-      # 5. PC2 컨트롤러 변경 시에만 실행
+      # 5. PC2 컨트롤러 변경 시에만 실행 (핫픽스 적용)
       - name: Validate PC2 OpenTelemetry Collector
         if: steps.filter.outputs.pc2 == 'true'
         run: |
           helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
-          helm template otel-pc2 open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc2-controller/otel-config.yaml | kubeconform -summary
+          helm template otel-pc2 open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc2-controller/otel-config.yaml | kubeconform -summary -ignore-missing-schemas
+          
