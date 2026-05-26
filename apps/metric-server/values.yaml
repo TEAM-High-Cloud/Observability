@@ -1,5 +1,7 @@
 victoria-metrics-operator:
   enabled: true
+  crds:
+    enabled: true
 
 vmsingle:
   enabled: true
