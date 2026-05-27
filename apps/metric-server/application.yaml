@@ -16,7 +16,7 @@ spec:
       targetRevision: HEAD
       ref: values
   destination:
-    name: metric-cluster
+    name: metric
     namespace: victoria-metrics
   syncPolicy:
     automated:
