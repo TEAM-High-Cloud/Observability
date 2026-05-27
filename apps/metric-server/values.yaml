@@ -1,0 +1,34 @@
+server:
+  enabled: true
+  replicaCount: 1
+  retentionPeriod: "15d"
+
+  persistentVolume:
+    enabled: true
+    storageClassName: "local-path"
+    accessModes:
+      - ReadWriteOnce
+    size: 20Gi
+    mountPath: /storage
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  service:
+    type: NodePort
+    servicePort: 8428
+    nodePort: 30428
+
+  scrape:
+    enabled: false
+
+  extraArgs:
+    envflag.enable: "true"
+    envflag.prefix: "VM_"
+    loggerFormat: "json"
+    httpListenAddr: ":8428"
