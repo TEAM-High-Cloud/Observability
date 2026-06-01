@@ -2,30 +2,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: metric-server-release
+  name: grafana-loki-release
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   sources:
-    - repoURL: 'https://victoriametrics.github.io/helm-charts/'
-      chart: victoria-metrics-single
-      targetRevision: 0.39.0
+    - repoURL: 'https://grafana.github.io/helm-charts'
+      chart: loki
+      targetRevision: 6.6.0
       helm:
-        releaseName: metric-server
         valueFiles:
-          - '$values/apps/metric-server/values.yaml'
+          - '$values/apps/log-server/values.yaml'
     - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
       targetRevision: HEAD
       ref: values
   destination:
-    name: metric
-    namespace: victoria-metrics
+    server: 'https://kubernetes.default.svc'
+    namespace: logging
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
