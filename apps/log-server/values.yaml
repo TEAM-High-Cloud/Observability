@@ -1,10 +1,11 @@
+---
 deploymentMode: SingleBinary
 
 loki:
   auth_enabled: false
 
   limits_config:
-    retention_period: 168h # 7일(168시간)
+    retention_period: 168h
 
   compactor:
     working_directory: /var/loki/compactor
@@ -20,4 +21,3 @@ read:
   replicas: 0
 write:
   replicas: 0
-  
