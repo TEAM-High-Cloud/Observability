@@ -4,6 +4,13 @@ deploymentMode: SingleBinary
 loki:
   auth_enabled: false
 
+  storage:
+    type: filesystem
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
+
   limits_config:
     retention_period: 168h
 
