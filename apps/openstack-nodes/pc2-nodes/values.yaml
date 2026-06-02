@@ -27,6 +27,10 @@ resources:
     memory: 512Mi
 
 config:
+  receivers:
+    kubeletstats:
+      endpoint: "https://127.0.0.1:10250"
+
   exporters:
     otlphttp/vm:
       metrics_endpoint: http://observ-metric-server:30428/opentelemetry/api/v1/push
