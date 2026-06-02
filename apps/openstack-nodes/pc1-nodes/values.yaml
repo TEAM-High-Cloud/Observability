@@ -1,6 +1,9 @@
 ---
 mode: daemonset
 
+hostNetwork: true
+dnsPolicy: Default
+
 image:
   repository: otel/opentelemetry-collector-k8s
 
