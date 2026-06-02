@@ -1,0 +1,61 @@
+---
+mode: daemonset
+
+image:
+  repository: otel/opentelemetry-collector-k8s
+
+presets:
+  hostMetrics:
+    enabled: true
+  kubeletMetrics:
+    enabled: true
+  kubernetesAttributes:
+    enabled: true
+  logsCollection:
+    enabled: true
+    includeCollectorLogs: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+config:
+  exporters:
+    otlphttp/vm:
+      metrics_endpoint: http://metric:30428/opentelemetry/api/v1/push
+      encoding: proto
+    otlphttp/loki:
+      logs_endpoint: http://log:31100/otlp/v1/logs
+
+  processors:
+    batch: {}
+    resourcedetection/system:
+      detectors: [env, system]
+      override: false
+    resource/cluster:
+      attributes:
+        - key: k8s.cluster.name
+          value: onprem-pc1
+          action: upsert
+
+  service:
+    pipelines:
+      metrics:
+        receivers: [hostmetrics, kubeletstats]
+        processors:
+          - resourcedetection/system
+          - resource/cluster
+          - k8sattributes
+          - batch
+        exporters: [otlphttp/vm]
+      logs:
+        receivers: [filelog]
+        processors:
+          - resource/cluster
+          - k8sattributes
+          - batch
+        exporters: [otlphttp/loki]
