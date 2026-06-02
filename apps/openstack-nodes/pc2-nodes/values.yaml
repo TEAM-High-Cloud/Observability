@@ -39,7 +39,7 @@ config:
     resource/cluster:
       attributes:
         - key: k8s.cluster.name
-          value: onprem-pc2
+          value: pc2
           action: upsert
 
   service:

@@ -20,7 +20,7 @@ spec:
       targetRevision: HEAD
       ref: values
   destination:
-    name: onprem-pc1
+    name: pc1
     namespace: opentelemetry
   syncPolicy:
     automated:
