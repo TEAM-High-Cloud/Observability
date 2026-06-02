@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-collector-pc1-release
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: 'https://open-telemetry.github.io/opentelemetry-helm-charts'
+      chart: opentelemetry-collector
+      targetRevision: 0.97.1
+      helm:
+        releaseName: otel-collector
+        valueFiles:
+          - '$values/apps/openstack-nodes/pc1-nodes/values.yaml'
+    - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
+      targetRevision: HEAD
+      ref: values
+  destination:
+    name: onprem-pc1
+    namespace: opentelemetry
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
