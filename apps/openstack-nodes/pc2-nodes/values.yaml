@@ -29,10 +29,10 @@ resources:
 config:
   exporters:
     otlphttp/vm:
-      metrics_endpoint: http://metric:30428/opentelemetry/api/v1/push
+      metrics_endpoint: http://observ-metric-server:30428/opentelemetry/api/v1/push
       encoding: proto
     otlphttp/loki:
-      logs_endpoint: http://log:31100/otlp/v1/logs
+      logs_endpoint: http://observ-log-server:31100/otlp/v1/logs
 
   processors:
     batch: {}
