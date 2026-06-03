@@ -16,6 +16,10 @@ spec:
         releaseName: grafana
         valueFiles:
           - '$values/apps/dashboard-server/values.yaml'
+        fileParameters:
+          - name: dashboards.default.openstack-nodes-infra.json
+            path: >-
+             $values/apps/dashboard-server/dashboards/openstack-nodes-infra.json
     - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
       targetRevision: HEAD
       ref: values
