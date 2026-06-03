@@ -2,7 +2,12 @@
 replicas: 1
 
 hostNetwork: true
-dnsPolicy: Default
+dnsPolicy: None
+dnsConfig:
+  nameservers:
+    - 100.100.100.100
+  searches:
+    - tail07adfd.ts.net
 
 adminUser: admin
 adminPassword: admin
