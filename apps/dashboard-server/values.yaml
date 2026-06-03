@@ -1,0 +1,53 @@
+---
+replicas: 1
+
+hostNetwork: true
+dnsPolicy: Default
+
+adminUser: admin
+adminPassword: admin
+
+persistence:
+  enabled: false
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 3000
+  nodePort: 30300
+  portName: http-grafana
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: VictoriaMetrics
+        type: prometheus
+        uid: victoriametrics
+        url: http://observ-metric-server:30428
+        access: proxy
+        isDefault: true
+        editable: true
+      - name: Loki
+        type: loki
+        uid: loki
+        url: http://observ-log-server:31100
+        access: proxy
+        editable: true
+
+grafana.ini:
+  server:
+    http_port: 3000
+  auth.anonymous:
+    enabled: false
+  analytics:
+    reporting_enabled: false
+    check_for_updates: false
