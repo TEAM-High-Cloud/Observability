@@ -20,6 +20,9 @@ spec:
           - name: dashboards.default.openstack-nodes-infra.json
             path: >-
              $values/apps/dashboard-server/dashboards/openstack-nodes-infra.json
+          - name: dashboards.default.openstack-nodes-logs.json
+            path: >-
+             $values/apps/dashboard-server/dashboards/openstack-nodes-logs.json
     - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
       targetRevision: HEAD
       ref: values
