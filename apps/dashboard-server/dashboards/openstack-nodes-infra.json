@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "Host-level resource observability for OpenStack hosts pc1/pc2, fed by OTel hostmetrics receiver.",
+  "description": "Host-level resource observability for OpenStack hosts pc1/pc2, fed by OTel hostmetrics receiver. Metric names and resource attribute keys retain dot notation as VictoriaMetrics ingests OTLP without the Prometheus naming translation.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -30,8 +30,8 @@
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "100 * (1 - sum by (k8s_cluster_name) (rate(system_cpu_time{state=\"idle\", k8s_cluster_name=~\"$cluster\"}[5m])) / sum by (k8s_cluster_name) (rate(system_cpu_time{k8s_cluster_name=~\"$cluster\"}[5m])))",
-          "legendFormat": "{{k8s_cluster_name}}",
+          "expr": "label_replace(100 * (1 - sum by (\"k8s.cluster.name\") (rate({__name__=\"system.cpu.time\", state=\"idle\", \"k8s.cluster.name\"=~\"$cluster\"}[5m])) / sum by (\"k8s.cluster.name\") (rate({__name__=\"system.cpu.time\", \"k8s.cluster.name\"=~\"$cluster\"}[5m]))), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}}",
           "range": true,
           "refId": "A"
         }
@@ -54,31 +54,31 @@
     {
       "id": 2,
       "type": "timeseries",
-      "title": "Load average (1m)",
+      "title": "Load average (1m / 5m / 15m)",
       "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
       "datasource": {"type": "prometheus", "uid": "victoriametrics"},
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "avg by (k8s_cluster_name) (system_cpu_load_average_1m{k8s_cluster_name=~\"$cluster\"})",
-          "legendFormat": "{{k8s_cluster_name}} - 1m",
+          "expr": "label_replace(avg by (\"k8s.cluster.name\") ({__name__=\"system.cpu.load_average.1m\", \"k8s.cluster.name\"=~\"$cluster\"}), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}} - 1m",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "avg by (k8s_cluster_name) (system_cpu_load_average_5m{k8s_cluster_name=~\"$cluster\"})",
-          "legendFormat": "{{k8s_cluster_name}} - 5m",
+          "expr": "label_replace(avg by (\"k8s.cluster.name\") ({__name__=\"system.cpu.load_average.5m\", \"k8s.cluster.name\"=~\"$cluster\"}), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}} - 5m",
           "range": true,
           "refId": "B"
         },
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "avg by (k8s_cluster_name) (system_cpu_load_average_15m{k8s_cluster_name=~\"$cluster\"})",
-          "legendFormat": "{{k8s_cluster_name}} - 15m",
+          "expr": "label_replace(avg by (\"k8s.cluster.name\") ({__name__=\"system.cpu.load_average.15m\", \"k8s.cluster.name\"=~\"$cluster\"}), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}} - 15m",
           "range": true,
           "refId": "C"
         }
@@ -107,8 +107,8 @@
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "100 * sum by (k8s_cluster_name) (system_memory_usage{state=\"used\", k8s_cluster_name=~\"$cluster\"}) / sum by (k8s_cluster_name) (system_memory_usage{k8s_cluster_name=~\"$cluster\"})",
-          "legendFormat": "{{k8s_cluster_name}}",
+          "expr": "label_replace(100 * sum by (\"k8s.cluster.name\") ({__name__=\"system.memory.usage\", state=\"used\", \"k8s.cluster.name\"=~\"$cluster\"}) / sum by (\"k8s.cluster.name\") ({__name__=\"system.memory.usage\", \"k8s.cluster.name\"=~\"$cluster\"}), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}}",
           "range": true,
           "refId": "A"
         }
@@ -138,8 +138,8 @@
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "100 * sum by (k8s_cluster_name, mountpoint) (system_filesystem_usage{state=\"used\", k8s_cluster_name=~\"$cluster\"}) / sum by (k8s_cluster_name, mountpoint) (system_filesystem_usage{k8s_cluster_name=~\"$cluster\"})",
-          "legendFormat": "{{k8s_cluster_name}} - {{mountpoint}}",
+          "expr": "label_replace(100 * sum by (\"k8s.cluster.name\", mountpoint) ({__name__=\"system.filesystem.usage\", state=\"used\", \"k8s.cluster.name\"=~\"$cluster\"}) / sum by (\"k8s.cluster.name\", mountpoint) ({__name__=\"system.filesystem.usage\", \"k8s.cluster.name\"=~\"$cluster\"}), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}} - {{mountpoint}}",
           "range": true,
           "refId": "A"
         }
@@ -169,8 +169,8 @@
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "sum by (k8s_cluster_name, direction) (rate(system_disk_io{k8s_cluster_name=~\"$cluster\"}[5m]))",
-          "legendFormat": "{{k8s_cluster_name}} - {{direction}}",
+          "expr": "label_replace(sum by (\"k8s.cluster.name\", direction) (rate({__name__=\"system.disk.io\", \"k8s.cluster.name\"=~\"$cluster\"}[5m])), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}} - {{direction}}",
           "range": true,
           "refId": "A"
         }
@@ -198,8 +198,8 @@
         {
           "datasource": {"type": "prometheus", "uid": "victoriametrics"},
           "editorMode": "code",
-          "expr": "sum by (k8s_cluster_name, direction) (rate(system_network_io{k8s_cluster_name=~\"$cluster\"}[5m]))",
-          "legendFormat": "{{k8s_cluster_name}} - {{direction}}",
+          "expr": "label_replace(sum by (\"k8s.cluster.name\", direction) (rate({__name__=\"system.network.io\", \"k8s.cluster.name\"=~\"$cluster\"}[5m])), \"cluster\", \"$1\", \"k8s.cluster.name\", \"(.+)\")",
+          "legendFormat": "{{cluster}} - {{direction}}",
           "range": true,
           "refId": "A"
         }
@@ -224,25 +224,22 @@
   "templating": {
     "list": [
       {
+        "allValue": ".+",
         "current": {"selected": false, "text": ["All"], "value": ["$__all"]},
-        "datasource": {"type": "prometheus", "uid": "victoriametrics"},
-        "definition": "label_values(system_cpu_load_average_1m, k8s_cluster_name)",
         "hide": 0,
         "includeAll": true,
         "label": "cluster",
         "multi": true,
         "name": "cluster",
-        "options": [],
-        "query": {
-          "qryType": 1,
-          "query": "label_values(system_cpu_load_average_1m, k8s_cluster_name)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
+        "options": [
+          {"selected": true, "text": "All", "value": "$__all"},
+          {"selected": false, "text": "pc1", "value": "pc1"},
+          {"selected": false, "text": "pc2", "value": "pc2"}
+        ],
+        "query": "pc1,pc2",
+        "queryValue": "",
         "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
+        "type": "custom"
       }
     ]
   },
@@ -251,6 +248,6 @@
   "timezone": "browser",
   "title": "OpenStack Nodes — Infra",
   "uid": "openstack-nodes-infra",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
