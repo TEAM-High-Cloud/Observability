@@ -183,7 +183,7 @@
     {
       "id": 6,
       "type": "logs",
-      "title": "Errors / warnings only",
+      "title": "Errors / warnings only (pods)",
       "gridPos": {"x": 0, "y": 26, "w": 24, "h": 10},
       "datasource": {"type": "loki", "uid": "loki"},
       "targets": [
@@ -191,6 +191,100 @@
           "datasource": {"type": "loki", "uid": "loki"},
           "editorMode": "code",
           "expr": "{k8s_cluster_name=~\"$cluster\", k8s_namespace_name=~\"$namespace\"} |~ \"(?i)error|warn|fatal|panic\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Host syslog volume by cluster (lines/s)",
+      "gridPos": {"x": 0, "y": 36, "w": 12, "h": 8},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "editorMode": "code",
+          "expr": "sum by (k8s_cluster_name) (rate({k8s_cluster_name=~\"$cluster\", log_file_name=\"syslog\"}[1m]))",
+          "legendFormat": "{{k8s_cluster_name}}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "logs/sec",
+          "min": 0,
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 25, "stacking": {"mode": "normal", "group": "A"}}
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]},
+        "tooltip": {"mode": "multi", "sort": "desc"}
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Host syslog error / warning rate (lines/s)",
+      "gridPos": {"x": 12, "y": 36, "w": 12, "h": 8},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "editorMode": "code",
+          "expr": "sum by (k8s_cluster_name) (rate({k8s_cluster_name=~\"$cluster\", log_file_name=\"syslog\"} |~ \"(?i)error|fatal|panic\" [1m]))",
+          "legendFormat": "{{k8s_cluster_name}} - error",
+          "queryType": "range",
+          "refId": "A"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "editorMode": "code",
+          "expr": "sum by (k8s_cluster_name) (rate({k8s_cluster_name=~\"$cluster\", log_file_name=\"syslog\"} |~ \"(?i)warn\" [1m]))",
+          "legendFormat": "{{k8s_cluster_name}} - warn",
+          "queryType": "range",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "logs/sec",
+          "min": 0,
+          "color": {"mode": "palette-classic"},
+          "custom": {"drawStyle": "line", "lineWidth": 2, "fillOpacity": 10}
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]},
+        "tooltip": {"mode": "multi", "sort": "desc"}
+      }
+    },
+    {
+      "id": 9,
+      "type": "logs",
+      "title": "Host syslog live stream",
+      "gridPos": {"x": 0, "y": 44, "w": 24, "h": 12},
+      "datasource": {"type": "loki", "uid": "loki"},
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "editorMode": "code",
+          "expr": "{k8s_cluster_name=~\"$cluster\", log_file_name=\"syslog\"}",
           "queryType": "range",
           "refId": "A"
         }
@@ -260,6 +354,6 @@
   "timezone": "browser",
   "title": "OpenStack Nodes — Logs",
   "uid": "openstack-nodes-logs",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
