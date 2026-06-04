@@ -49,11 +49,6 @@ config:
         - key: k8s.cluster.name
           value: pc2
           action: upsert
-    filter/drop_coredns_import_warning:
-      error_mode: ignore
-      logs:
-        log_record:
-          - 'IsMatch(body, ".*No files matching import glob pattern.*")'
 
   service:
     pipelines:
@@ -70,6 +65,5 @@ config:
         processors:
           - resource/cluster
           - k8sattributes
-          - filter/drop_coredns_import_warning
           - batch
         exporters: [otlphttp/loki]
