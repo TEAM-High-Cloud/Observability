@@ -26,10 +26,36 @@ resources:
     cpu: 500m
     memory: 512Mi
 
+extraVolumes:
+  - name: host-varlog
+    hostPath:
+      path: /var/log
+      type: Directory
+
+extraVolumeMounts:
+  - name: host-varlog
+    mountPath: /host/var/log
+    readOnly: true
+
 config:
   receivers:
     kubeletstats:
       endpoint: "https://127.0.0.1:10250"
+    filelog/host:
+      include:
+        - /host/var/log/syslog
+        - /host/var/log/auth.log
+        - /host/var/log/openstack/**/*.log
+        - /host/var/log/nova/**/*.log
+        - /host/var/log/neutron/**/*.log
+        - /host/var/log/cinder/**/*.log
+        - /host/var/log/keystone/**/*.log
+        - /host/var/log/glance/**/*.log
+      start_at: end
+      include_file_path: true
+      include_file_name: false
+      resource:
+        log.source: host-varlog
 
   exporters:
     otlphttp/vm:
@@ -66,7 +92,7 @@ config:
           - batch
         exporters: [otlphttp/vm]
       logs:
-        receivers: [filelog]
+        receivers: [filelog, filelog/host]
         processors:
           - resource/cluster
           - k8sattributes
