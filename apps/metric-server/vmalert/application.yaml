@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vmalert-release
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: 'https://victoriametrics.github.io/helm-charts/'
+      chart: victoria-metrics-alert
+      targetRevision: 0.11.0
+      helm:
+        releaseName: vmalert
+        valueFiles:
+          - '$values/apps/metric-server/vmalert/values.yaml'
+    - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
+      targetRevision: HEAD
+      ref: values
+  destination:
+    name: metric
+    namespace: vmalert
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
