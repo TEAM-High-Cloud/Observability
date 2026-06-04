@@ -26,10 +26,29 @@ resources:
     cpu: 500m
     memory: 512Mi
 
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+
+extraVolumes:
+  - name: host-varlog
+    hostPath:
+      path: /var/log
+      type: Directory
+
+extraVolumeMounts:
+  - name: host-varlog
+    mountPath: /host/var/log
+    readOnly: true
+
 config:
   receivers:
     kubeletstats:
       endpoint: "https://127.0.0.1:10250"
+    filelog/host:
+      include:
+        - /host/var/log/syslog
+      start_at: end
 
   exporters:
     otlphttp/vm:
@@ -61,7 +80,7 @@ config:
           - batch
         exporters: [otlphttp/vm]
       logs:
-        receivers: [filelog]
+        receivers: [filelog, filelog/host]
         processors:
           - resource/cluster
           - k8sattributes
