@@ -47,6 +47,8 @@ dashboards:
   default:
     openstack-nodes-infra:
       datasource: VictoriaMetrics
+    openstack-nodes-logs:
+      datasource: Loki
 
 datasources:
   datasources.yaml:
