@@ -1,0 +1,116 @@
+---
+replicaCount: 1
+
+image:
+  pullPolicy: IfNotPresent
+
+service:
+  enabled: true
+  type: NodePort
+  servicePort: 8880
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+datasource:
+  url: >-
+    http://metric-server-victoria-metrics-single-server.victoria-metrics:8428
+
+notifier:
+  alertmanager:
+    url: http://alertmanager.alertmanager:9093
+
+remoteWrite: {}
+remoteRead: {}
+
+config:
+  alerts:
+    groups:
+      - name: openstack-nodes-host
+        interval: 30s
+        rules:
+          - alert: NodeDown
+            expr: >-
+              absent({__name__="system.cpu.load_average.1m",
+              "k8s.cluster.name"="pc1"})
+            for: 2m
+            labels:
+              severity: critical
+              cluster: pc1
+            annotations:
+              summary: 'OpenStack node pc1 is silent (no hostmetrics 2m+)'
+              description: >-
+                OTel hostmetrics from pc1 have been absent for 2 minutes.
+                Either the collector pod or the host itself is down.
+
+          - alert: NodeDown
+            expr: >-
+              absent({__name__="system.cpu.load_average.1m",
+              "k8s.cluster.name"="pc2"})
+            for: 2m
+            labels:
+              severity: critical
+              cluster: pc2
+            annotations:
+              summary: 'OpenStack node pc2 is silent (no hostmetrics 2m+)'
+              description: >-
+                OTel hostmetrics from pc2 have been absent for 2 minutes.
+                Either the collector pod or the host itself is down.
+
+          - alert: HighCpu
+            expr: >-
+              label_replace(100 * (1 -
+              sum by ("k8s.cluster.name")
+              (rate({__name__="system.cpu.time", state="idle"}[5m])) /
+              sum by ("k8s.cluster.name")
+              (rate({__name__="system.cpu.time"}[5m]))),
+              "cluster", "$1", "k8s.cluster.name", "(.+)") > 80
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: 'High CPU on {{ $labels.cluster }} (>80% for 5m)'
+              description: >-
+                CPU usage exceeded 80% for 5 minutes on
+                {{ $labels.cluster }}.
+
+          - alert: HighMemory
+            expr: >-
+              label_replace(100 *
+              sum by ("k8s.cluster.name")
+              ({__name__="system.memory.usage", state="used"}) /
+              sum by ("k8s.cluster.name")
+              ({__name__="system.memory.usage"}),
+              "cluster", "$1", "k8s.cluster.name", "(.+)") > 90
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: 'High memory on {{ $labels.cluster }} (>90% for 5m)'
+              description: >-
+                Memory used ratio exceeded 90% for 5 minutes on
+                {{ $labels.cluster }}.
+
+          - alert: HighFilesystem
+            expr: >-
+              label_replace(100 *
+              sum by ("k8s.cluster.name", mountpoint)
+              ({__name__="system.filesystem.usage", state="used"}) /
+              sum by ("k8s.cluster.name", mountpoint)
+              ({__name__="system.filesystem.usage"}),
+              "cluster", "$1", "k8s.cluster.name", "(.+)") > 85
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: >-
+                Filesystem >85% on {{ $labels.cluster }}
+                {{ $labels.mountpoint }}
+              description: >-
+                Filesystem usage exceeded 85% on
+                {{ $labels.cluster }} at {{ $labels.mountpoint }}.
