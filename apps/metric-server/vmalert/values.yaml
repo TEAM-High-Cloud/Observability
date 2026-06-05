@@ -5,6 +5,13 @@ server:
   image:
     pullPolicy: IfNotPresent
 
+  # vmalert's local PromQL validator rejects quoted-label syntax such as
+  # {"k8s.cluster.name"="pc1"} and `sum by ("k8s.cluster.name")`, which VM
+  # itself accepts via MetricsQL. Skip the local check so the expression
+  # is forwarded as-is to the VM /api/v1/query endpoint at eval time.
+  extraArgs:
+    rule.validateExpressions: "false"
+
   service:
     enabled: true
     type: NodePort
