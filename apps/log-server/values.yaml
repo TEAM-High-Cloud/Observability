@@ -37,6 +37,18 @@ loki:
     filesystem:
       directory: /var/loki/chunks
 
+  rulerConfig:
+    enable_alertmanager_v2: true
+    enable_api: true
+    alertmanager_url: http://100.87.44.83:30903
+    evaluation_interval: 30s
+    poll_interval: 1m
+    storage:
+      type: local
+      local:
+        directory: /etc/loki/rules
+    rule_path: /tmp/loki-rules
+
 minio:
   enabled: false
 
@@ -47,9 +59,15 @@ singleBinary:
   extraVolumes:
     - name: data
       emptyDir: {}
+    - name: alert-rules
+      configMap:
+        name: loki-alert-rules
   extraVolumeMounts:
     - name: data
       mountPath: /var/loki
+    - name: alert-rules
+      mountPath: /etc/loki/rules/fake
+      readOnly: true
 
 chunksCache:
   enabled: false
@@ -81,3 +99,83 @@ extraObjects:
           targetPort: http-metrics
           nodePort: 31100
           protocol: TCP
+
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: loki-alert-rules
+      labels:
+        app.kubernetes.io/name: loki
+        app.kubernetes.io/component: single-binary
+    data:
+      rules.yaml: |
+        groups:
+          - name: openstack-logs
+            interval: 30s
+            rules:
+              - alert: HighErrorLogRate
+                expr: >-
+                  sum by (k8s_cluster_name) (
+                  rate({k8s_cluster_name=~".+"}
+                  |~ "(?i)error|fatal|panic" [5m])
+                  ) > 2
+                for: 5m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: >-
+                    High error log rate on
+                    {{ $labels.k8s_cluster_name }}
+                  description: >-
+                    Error log lines > 2/sec sustained 5m on
+                    {{ $labels.k8s_cluster_name }}.
+
+              - alert: OOMKillDetected
+                expr: >-
+                  sum by (k8s_cluster_name) (
+                  count_over_time({log_file_name="syslog"}
+                  |~ "(?i)out of memory|oom-killer|killed process" [2m])
+                  ) > 0
+                for: 0m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: >-
+                    OOM kill detected on
+                    {{ $labels.k8s_cluster_name }}
+                  description: >-
+                    Kernel OOM event in syslog on
+                    {{ $labels.k8s_cluster_name }}.
+
+              - alert: AuthFailureSpike
+                expr: >-
+                  sum by (k8s_cluster_name) (
+                  rate({log_file_name="syslog"}
+                  |~ "(?i)authentication failure|failed password" [5m])
+                  ) > 0.1
+                for: 5m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: >-
+                    Auth failure spike on
+                    {{ $labels.k8s_cluster_name }}
+                  description: >-
+                    Failed auth attempts > 0.1/sec for 5m on
+                    {{ $labels.k8s_cluster_name }}.
+
+              - alert: HostSyslogSilent
+                expr: >-
+                  sum by (k8s_cluster_name) (
+                  rate({log_file_name="syslog",
+                  k8s_cluster_name="pc1"}[5m])
+                  ) == 0
+                for: 5m
+                labels:
+                  severity: warning
+                  cluster: pc1
+                annotations:
+                  summary: 'pc1 syslog silent for 5m (host stalled?)'
+                  description: >-
+                    No syslog lines from pc1 in 5 minutes. Host or rsyslog
+                    may be down.
