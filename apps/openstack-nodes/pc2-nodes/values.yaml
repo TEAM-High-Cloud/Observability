@@ -2,7 +2,12 @@
 mode: daemonset
 
 hostNetwork: true
-dnsPolicy: Default
+dnsPolicy: None
+dnsConfig:
+  nameservers:
+    - 100.100.100.100
+  searches:
+    - tail07adfd.ts.net
 
 image:
   repository: otel/opentelemetry-collector-k8s
