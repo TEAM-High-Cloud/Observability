@@ -125,10 +125,10 @@ extraObjects:
                 annotations:
                   summary: >-
                     High error log rate on
-                    {{ $labels.k8s_cluster_name }}
+                    {{ `{{ $labels.k8s_cluster_name }}` }}
                   description: >-
                     Error log lines > 2/sec sustained 5m on
-                    {{ $labels.k8s_cluster_name }}.
+                    {{ `{{ $labels.k8s_cluster_name }}` }}.
 
               - alert: OOMKillDetected
                 expr: >-
@@ -142,10 +142,10 @@ extraObjects:
                 annotations:
                   summary: >-
                     OOM kill detected on
-                    {{ $labels.k8s_cluster_name }}
+                    {{ `{{ $labels.k8s_cluster_name }}` }}
                   description: >-
                     Kernel OOM event in syslog on
-                    {{ $labels.k8s_cluster_name }}.
+                    {{ `{{ $labels.k8s_cluster_name }}` }}.
 
               - alert: AuthFailureSpike
                 expr: >-
@@ -159,10 +159,10 @@ extraObjects:
                 annotations:
                   summary: >-
                     Auth failure spike on
-                    {{ $labels.k8s_cluster_name }}
+                    {{ `{{ $labels.k8s_cluster_name }}` }}
                   description: >-
                     Failed auth attempts > 0.1/sec for 5m on
-                    {{ $labels.k8s_cluster_name }}.
+                    {{ `{{ $labels.k8s_cluster_name }}` }}.
 
               - alert: HostSyslogSilent
                 expr: >-
