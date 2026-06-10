@@ -8,11 +8,14 @@ loki:
     replication_factor: 1
 
   storage:
-    type: filesystem
+    type: s3
     bucketNames:
-      chunks: chunks
-      ruler: ruler
-      admin: admin
+      chunks: obs-loki-167781471242-ap-northeast-2-an
+      ruler: obs-loki-167781471242-ap-northeast-2-an
+      admin: obs-loki-167781471242-ap-northeast-2-an
+    s3:
+      region: ap-northeast-2
+      s3forcepathstyle: false
 
   limits_config:
     retention_period: 168h
@@ -21,21 +24,22 @@ loki:
     working_directory: /var/loki/compactor
     retention_enabled: true
     retention_delete_delay: 2h
-    delete_request_store: filesystem
+    delete_request_store: s3
 
   schemaConfig:
     configs:
       - from: "2024-01-01"
         store: tsdb
-        object_store: filesystem
+        object_store: s3
         schema: v13
         index:
           prefix: index_
           period: 24h
 
   storageConfig:
-    filesystem:
-      directory: /var/loki/chunks
+    tsdb_shipper:
+      active_index_directory: /var/loki/tsdb-index
+      cache_location: /var/loki/tsdb-cache
 
   rulerConfig:
     enable_alertmanager_v2: true
@@ -55,16 +59,14 @@ minio:
 singleBinary:
   replicas: 1
   persistence:
-    enabled: false
+    enabled: true
+    storageClass: local-path
+    size: 10Gi
   extraVolumes:
-    - name: data
-      emptyDir: {}
     - name: alert-rules
       configMap:
         name: loki-alert-rules
   extraVolumeMounts:
-    - name: data
-      mountPath: /var/loki
     - name: alert-rules
       mountPath: /etc/loki/rules/fake
       readOnly: true
