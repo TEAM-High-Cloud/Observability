@@ -1,0 +1,16 @@
+---
+controller:
+  replicaCount: 1
+  region: ap-northeast-2
+
+storageClasses:
+  - name: gp3
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "true"
+    parameters:
+      type: gp3
+      encrypted: "true"
+      fsType: ext4
+    reclaimPolicy: Delete
+    volumeBindingMode: WaitForFirstConsumer
+    allowVolumeExpansion: true

@@ -6,10 +6,10 @@ server:
 
   persistentVolume:
     enabled: true
-    storageClassName: "local-path"
+    storageClassName: "gp3"
     accessModes:
       - ReadWriteOnce
-    size: 20Gi
+    size: 100Gi
     mountPath: /storage
 
   resources:
@@ -33,3 +33,51 @@ server:
     envflag.prefix: "VM_"
     loggerFormat: "json"
     httpListenAddr: ":8428"
+
+extraObjects:
+  - |
+    apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: vmbackup
+      labels:
+        app.kubernetes.io/name: vmbackup
+        app.kubernetes.io/component: backup
+    spec:
+      schedule: "0 18 * * *"
+      concurrencyPolicy: Forbid
+      successfulJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 3
+      jobTemplate:
+        spec:
+          backoffLimit: 2
+          template:
+            spec:
+              restartPolicy: OnFailure
+              containers:
+                - name: vmbackup
+                  image: victoriametrics/vmbackup:v1.144.0
+                  args:
+                    - -storageDataPath=/storage
+                    - -snapshot.createURL=http://metric-server-victoria-metrics-single-server.victoria-metrics.svc:8428/snapshot/create
+                    - -snapshot.deleteURL=http://metric-server-victoria-metrics-single-server.victoria-metrics.svc:8428/snapshot/delete
+                    - -dst=s3://obs-vm-backup-167781471242-ap-northeast-2-an/metric-server/state
+                    - -customS3Endpoint=
+                    - -loggerFormat=json
+                  env:
+                    - name: AWS_REGION
+                      value: ap-northeast-2
+                  volumeMounts:
+                    - name: server-volume
+                      mountPath: /storage
+                  resources:
+                    requests:
+                      cpu: 100m
+                      memory: 256Mi
+                    limits:
+                      cpu: 500m
+                      memory: 1Gi
+              volumes:
+                - name: server-volume
+                  persistentVolumeClaim:
+                    claimName: server-volume-metric-server-victoria-metrics-single-server-0
