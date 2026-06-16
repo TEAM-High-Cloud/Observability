@@ -1,12 +1,15 @@
 ---
 replicaCount: 1
+
 image:
   repository: 167781471242.dkr.ecr.ap-northeast-2.amazonaws.com/obs-ai-analyzer
   tag: "a052c2f"
   pullPolicy: IfNotPresent
+
 service:
   type: ClusterIP
   port: 8000
+
 resources:
   requests:
     cpu: 50m
@@ -14,18 +17,46 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
+
 env:
   LOG_LEVEL: INFO
+
 serviceAccount:
   create: true
   name: ai-analyzer
+
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 10001
   fsGroup: 10001
+
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
   readOnlyRootFilesystem: true
+
+# Name of the docker-registry Secret that holds the ECR pull credentials.
+# Rotated by the CronJob below (see ecrTokenRefresh).
+imagePullSecret:
+  name: ecr-pull
+
+# CronJob that refreshes `imagePullSecret.name` before the 12h ECR token expires.
+# Required because k3s does not auto-authenticate to ECR from the node's
+# instance profile the way EKS does (see issue #57).
+ecrTokenRefresh:
+  enabled: true
+  schedule: "0 */6 * * *"
+  image:
+    repository: amazon/aws-cli
+    tag: "2.35.5"
+  awsRegion: ap-northeast-2
+  ecrRegistry: 167781471242.dkr.ecr.ap-northeast-2.amazonaws.com
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
