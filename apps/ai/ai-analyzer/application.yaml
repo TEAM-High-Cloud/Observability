@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-analyzer-release
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
+    targetRevision: HEAD
+    path: apps/ai/ai-analyzer/chart
+    helm:
+      releaseName: ai-analyzer
+      valueFiles:
+        - values.yaml
+  destination:
+    name: metric
+    namespace: ai-analyzer
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
