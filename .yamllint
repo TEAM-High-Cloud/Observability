@@ -1,6 +1,13 @@
 ---
 extends: default
 
+# Helm chart templates are Go-template + YAML, not pure YAML.
+# yamllint mistakes `{{ ... }}` for YAML flow braces ("too many spaces inside
+# braces") and `{{- if ... -}}` for invalid YAML; let `helm template` validate
+# them instead (already in the ci.yaml job).
+ignore: |
+  apps/ai/ai-analyzer/chart/templates/
+
 rules:
   line-length:
     max: 160
