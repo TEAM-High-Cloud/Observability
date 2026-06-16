@@ -7,3 +7,10 @@ infrastructure/group_vars/onprem_pcs.yaml
 
 # Ansible command memo
 ansible-command.txt
+
+# Python virtualenvs and caches (ai-analyzer local dev)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/

@@ -48,12 +48,10 @@ jobs:
           tags: |
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.tag.outputs.tag }}
 
-      - name: Install yq
-        uses: mikefarah/yq@v4.45.1
-
       - name: Bump image.tag in values.yaml
-        run: |
-          yq -i '.image.tag = "${{ steps.tag.outputs.tag }}"' "${VALUES_FILE}"
+        uses: mikefarah/yq@v4.45.1
+        with:
+          cmd: yq -i '.image.tag = "${{ steps.tag.outputs.tag }}"' '${{ env.VALUES_FILE }}'
 
       - name: Open PR with tag bump
         uses: peter-evans/create-pull-request@v6
