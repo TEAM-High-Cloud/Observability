@@ -59,3 +59,9 @@ jobs:
             echo "Validating PC2 OTel Collector..."
             helm template open-telemetry/opentelemetry-collector --values apps/openstack-nodes/pc2-controller/otel-config.yaml > /dev/null
           fi
+
+          # ai-analyzer in-repo chart 검사
+          if [ -f apps/ai/ai-analyzer/chart/Chart.yaml ]; then
+            echo "Validating ai-analyzer chart..."
+            helm template apps/ai/ai-analyzer/chart --set image.tag=ci > /dev/null
+          fi
