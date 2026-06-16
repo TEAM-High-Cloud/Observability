@@ -1,0 +1,6 @@
+chart/
+application.yaml
+README.md
+**/__pycache__
+**/*.pyc
+.venv/
