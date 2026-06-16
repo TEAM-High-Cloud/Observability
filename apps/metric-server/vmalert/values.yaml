@@ -46,28 +46,28 @@ server:
               expr: >-
                 absent({__name__="system.cpu.load_average.1m",
                 "k8s.cluster.name"="pc1"})
-              for: 2m
+              for: 5m
               labels:
                 severity: critical
                 cluster: pc1
               annotations:
-                summary: 'OpenStack node pc1 is silent (no hostmetrics 2m+)'
+                summary: 'OpenStack node pc1 is silent (no hostmetrics 5m+)'
                 description: >-
-                  OTel hostmetrics from pc1 have been absent for 2 minutes.
+                  OTel hostmetrics from pc1 have been absent for 5 minutes.
                   Either the collector pod or the host itself is down.
 
             - alert: NodeDown
               expr: >-
                 absent({__name__="system.cpu.load_average.1m",
                 "k8s.cluster.name"="pc2"})
-              for: 2m
+              for: 5m
               labels:
                 severity: critical
                 cluster: pc2
               annotations:
-                summary: 'OpenStack node pc2 is silent (no hostmetrics 2m+)'
+                summary: 'OpenStack node pc2 is silent (no hostmetrics 5m+)'
                 description: >-
-                  OTel hostmetrics from pc2 have been absent for 2 minutes.
+                  OTel hostmetrics from pc2 have been absent for 5 minutes.
                   Either the collector pod or the host itself is down.
 
             - alert: HighCpu

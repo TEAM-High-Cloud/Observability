@@ -60,8 +60,22 @@ config:
       metrics_endpoint: >-
         http://observ-metric-server:30428/opentelemetry/api/v1/push
       encoding: proto
+      timeout: 15s
+      sending_queue:
+        enabled: true
+        queue_size: 5000
+      retry_on_failure:
+        enabled: true
+        max_elapsed_time: 1m
     otlphttp/loki:
       logs_endpoint: http://observ-log-server:31100/otlp/v1/logs
+      timeout: 15s
+      sending_queue:
+        enabled: true
+        queue_size: 10000
+      retry_on_failure:
+        enabled: true
+        max_elapsed_time: 1m
 
   processors:
     batch: {}
