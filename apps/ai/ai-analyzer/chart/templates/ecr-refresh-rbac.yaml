@@ -1,0 +1,39 @@
+{{- if .Values.ecrTokenRefresh.enabled -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ai-analyzer.fullname" . }}-ecr-refresh
+  labels:
+    {{- include "ai-analyzer.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ai-analyzer.fullname" . }}-ecr-refresh
+  labels:
+    {{- include "ai-analyzer.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: [{{ .Values.imagePullSecret.name | quote }}]
+    verbs: ["get", "patch", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ai-analyzer.fullname" . }}-ecr-refresh
+  labels:
+    {{- include "ai-analyzer.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "ai-analyzer.fullname" . }}-ecr-refresh
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ai-analyzer.fullname" . }}-ecr-refresh
+    namespace: {{ .Release.Namespace }}
+{{- end }}
