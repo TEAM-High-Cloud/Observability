@@ -26,10 +26,9 @@ env:
   LOKI_MAX_LINES: "200"
   # Bedrock
   BEDROCK_REGION: "ap-northeast-2"
-  # 발표 인지도 + 능력 균형을 위해 APAC Claude 3.5 Sonnet v2 사용.
-  # Marketplace 검증 이슈가 발생하면 콘솔에서 model access 명시적 enable
-  # 필요. GLOBAL Haiku 4.5 복귀는 Marketplace 정리 후 별 이슈로.
-  BEDROCK_MODEL_ID: "apac.anthropic.claude-3-5-sonnet-20241022-v2:0"
+  # APAC Sonnet 3.5 v2 / Sonnet 4 모두 레거시로 deprecated.
+  # 활성 Anthropic 모델 중 가장 강한 GLOBAL Claude Sonnet 4.5 사용.
+  BEDROCK_MODEL_ID: "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
   # Slack channel ID (e.g. C0123456789) — find via the Slack UI or
