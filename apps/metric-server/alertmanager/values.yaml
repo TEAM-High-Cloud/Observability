@@ -35,6 +35,11 @@ config:
     group_wait: 30s
     group_interval: 5m
     repeat_interval: 12h
+    routes:
+      # ai-analyzer가 분석/요약 후 Slack 스레드에 reply.
+      # continue: true 로 두어 slack-default 경로도 그대로 발사 (즉시 알림 유지).
+      - receiver: ai-analyzer
+        continue: true
 
   receivers:
     - name: slack-default
@@ -48,4 +53,13 @@ config:
             *Severity:* `{{ .Labels.severity }}`
             *Cluster:* `{{ .Labels.cluster }}`
             *Description:* {{ .Annotations.description }}
+            `fingerprint={{ .Fingerprint }}`
             {{ end }}
+
+    # ai-analyzer는 같은 알람을 webhook으로 받아 Bedrock 분석 후
+    # 같은 채널의 위 메시지에 thread reply.
+    - name: ai-analyzer
+      webhook_configs:
+        - url: http://ai-analyzer-ai-analyzer.ai-analyzer.svc.cluster.local:8000/webhook
+          send_resolved: false
+          max_alerts: 64

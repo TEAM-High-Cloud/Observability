@@ -22,20 +22,22 @@ Alertmanager ─────┤   (route continue: true)
 
 ## 상태
 
-PR2 (LLM 본체 붙이기) — Loki/VM 컨텍스트 수집 + 런북 매칭 + Bedrock 호출
-까지. 결과는 stdout에 구조화 로그로 출력. Slack은 PR3.
+PR3 (Slack 연결) — 분석 결과를 Slack 스레드 reply로 운영자에게 전달.
+Alertmanager는 즉시 발사한 알람 메시지에 fingerprint footer를 박고,
+ai-analyzer가 conversations.history로 그 부모 메시지를 찾아 스레드에 reply.
 
 - [x] FastAPI: `/healthz`, `/webhook`
-- [x] in-repo Helm chart
-- [x] ArgoCD Application
-- [x] ECR 빌드 워크플로우 (OIDC) + 자동 image tag bump PR
+- [x] in-repo Helm chart + ArgoCD Application
+- [x] ECR 빌드 + 자동 image tag bump PR
 - [x] Loki/VM 컨텍스트 수집 (PR2)
 - [x] 런북 markdown KB (PR2)
 - [x] Bedrock 호출 (PR2)
-- [ ] Bedrock prompt caching (별 작업 — baseline 검증 후)
-- [ ] Slack thread reply (Block Kit) (PR3)
-- [ ] Alertmanager route 분기 (PR3)
-- [ ] Bedrock 비용 모니터링 대시보드 (PR3)
+- [x] Slack Block Kit thread reply (PR3)
+- [x] Alertmanager route 분기 + fingerprint footer (PR3)
+- [ ] Bedrock prompt caching (별 작업)
+- [ ] Bedrock 비용 모니터링 대시보드 (별 후속 — CloudWatch datasource 셋업 포함)
+- [ ] k3s pod에서 Tailscale 호스트네임 해결 (#63)
+- [ ] GLOBAL Haiku 4.5로 복귀 (Marketplace 구독 풀린 후)
 
 ## 디렉토리
 
@@ -54,25 +56,29 @@ ai-analyzer/
 └── chart/                    # in-repo Helm chart
 ```
 
-## 분석 흐름 (PR2)
+## 분석 흐름 (PR3 기준)
 
 ```
-Alertmanager → POST /webhook
-   ↓
- main.py
-   ├── 즉시 HTTP 200 (Alertmanager retry 방지)
-   └── BackgroundTasks로 알람마다 _analyze_alert 등록
-        ├── loki.fetch  ─┐
-        ├── vm.fetch    ─┴─ asyncio.gather (병렬)
-        ├── runbooks.find(alertname)
-        └── bedrock.analyze(...) ← boto3 sync → executor에서
-               ↓
-            stdout JSON 로그 (alertname, summary, fallback 여부 등)
+                            ┌─► slack-default receiver ─► Slack #alerts (즉시)
+Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` footer
+                            └─► ai-analyzer receiver ─► POST /webhook
+                                                          ↓
+                                                       main.py
+                                                          ├── 즉시 200 OK
+                                                          └── BackgroundTasks
+                                                               ├── loki.fetch ─┐
+                                                               ├── vm.fetch  ──┴─ asyncio.gather
+                                                               ├── runbooks.find
+                                                               ├── bedrock.analyze (boto3 → executor)
+                                                               └── slack.post_thread_reply
+                                                                     ├── conversations.history로
+                                                                     │   fingerprint 매칭 → parent ts
+                                                                     └── chat.postMessage (thread_ts)
 ```
 
-- 어느 단계든 실패하면 빈 결과 / `summary=None` 으로 진행. 알람 처리 끊지 않음.
-- Bedrock 자격증명: 노드 instance profile → boto3 default chain.
-- Loki는 cross-cluster (Tailscale MagicDNS), VM은 in-cluster ClusterIP.
+- 모든 단계 soft-fail: Loki/VM/Bedrock/Slack 실패해도 분석 자체는 끊지 않음.
+- Slack 토큰 없으면 thread reply 단계만 스킵, stdout JSON 로그는 그대로.
+- 부모 메시지 매칭 실패하면 채널에 새 메시지로 fallback (스레드 X).
 
 ## 환경 변수 (chart values.env)
 
@@ -91,6 +97,34 @@ Alertmanager → POST /webhook
 
 `app/runbooks/<AlertName>.md` 파일 생성. 매칭은 정확한 alertname → 파일명.
 없으면 `_default.md`로 fallback. 코드 수정 없이 markdown만 추가하면 됨.
+
+## Slack 셋업 (PR3 머지 후 1회)
+
+1. `api.slack.com/apps` → **Create New App** → from scratch → 이름 `obs-ai-analyzer`
+2. **OAuth & Permissions** → Bot Token Scopes:
+   - `chat:write`
+   - `channels:history` (public 채널) 또는 `groups:history` (private)
+3. **Install to Workspace** → **Bot User OAuth Token** (`xoxb-…`) 복사
+4. 대상 채널(예: `#alerts`)에 `/invite @obs-ai-analyzer`
+5. K8s Secret 생성:
+   ```sh
+   kubectl -n ai-analyzer create secret generic ai-analyzer-slack \
+     --from-literal=token=xoxb-...
+   ```
+6. `apps/ai/ai-analyzer/chart/values.yaml`에 채널 ID + slack.enabled 켜기:
+   ```yaml
+   env:
+     SLACK_CHANNEL: "C01234567"   # Slack UI → 채널 우클릭 → "채널 세부 정보 보기"
+   slack:
+     enabled: true
+   ```
+   (1줄짜리 PR 또는 직접 main 커밋)
+
+Slack 채널 ID 못 찾으면 콘솔 또는:
+```sh
+curl -H "Authorization: Bearer xoxb-..." \
+  https://slack.com/api/conversations.list?types=public_channel,private_channel
+```
 
 ## 배포 흐름 (GitOps)
 
