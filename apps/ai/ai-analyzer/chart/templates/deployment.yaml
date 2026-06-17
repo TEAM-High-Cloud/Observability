@@ -16,6 +16,13 @@ spec:
         {{- include "ai-analyzer.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "ai-analyzer.serviceAccountName" . }}
+      {{- with .Values.dnsPolicy }}
+      dnsPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

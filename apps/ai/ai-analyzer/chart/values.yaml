@@ -26,9 +26,22 @@ env:
   LOKI_MAX_LINES: "200"
   # Bedrock
   BEDROCK_REGION: "ap-northeast-2"
-  BEDROCK_MODEL_ID: "anthropic.claude-haiku-4-5-20251001-v1:0"
+  # Haiku 4.5 requires inference profile invocation (on-demand throughput
+  # is rejected). Use the GLOBAL cross-region profile (APAC has no
+  # Haiku 4.5 profile as of 2026-06).
+  BEDROCK_MODEL_ID: "global.anthropic.claude-haiku-4-5-20251001-v1:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
+# Pod DNS — Tailscale MagicDNS needs explicit nameserver/search so the
+# pod can resolve cross-cluster Tailnet hostnames (e.g. observ-log-server
+# for Loki). Mirrors the pattern used by dashboard-server / openstack-nodes.
+dnsPolicy: ClusterFirst
+dnsConfig:
+  nameservers:
+    - 100.100.100.100
+  searches:
+    - tail07adfd.ts.net
+
 serviceAccount:
   create: true
   name: ai-analyzer
