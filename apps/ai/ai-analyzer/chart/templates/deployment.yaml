@@ -38,6 +38,15 @@ spec:
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
+            {{- with .Values.slack }}
+            {{- if .enabled }}
+            - name: SLACK_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretName | quote }}
+                  key: {{ .secretKey | quote }}
+            {{- end }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
