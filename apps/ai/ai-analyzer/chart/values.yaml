@@ -39,6 +39,11 @@ env:
   # ai-analyzer can match the parent message via conversations.history.
   SLACK_FINGERPRINT_MARKER: "fingerprint="
   SLACK_HISTORY_LOOKBACK: "30"
+  # 분석 카드 sender override (chat:write.customize scope 필요).
+  # 같은 App이 알람 + AI 분석 둘 다 발사하므로, AI 분석만 시각적으로 구분.
+  SLACK_USERNAME: "AI 분석 봇"
+  SLACK_ICON_URL: "https://raw.githubusercontent.com/TEAM-High-Cloud/Observability/main/apps/ai/ai-analyzer/assets/ai-analyzer-icon.png"
+  SLACK_ICON_EMOJI: ":robot_face:"
 
 # Slack Bot OAuth token (xoxb-...) — created manually as a Secret:
 #   kubectl -n ai-analyzer create secret generic ai-analyzer-slack \
