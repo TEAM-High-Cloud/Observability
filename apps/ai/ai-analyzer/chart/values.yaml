@@ -1,15 +1,12 @@
 ---
 replicaCount: 1
-
 image:
   repository: 167781471242.dkr.ecr.ap-northeast-2.amazonaws.com/obs-ai-analyzer
-  tag: "a052c2f"
+  tag: "640b496"
   pullPolicy: IfNotPresent
-
 service:
   type: ClusterIP
   port: 8000
-
 resources:
   requests:
     cpu: 50m
@@ -17,7 +14,6 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
 env:
   LOG_LEVEL: INFO
   # Cross-cluster Loki on log-server (Tailscale MagicDNS).
@@ -33,28 +29,23 @@ env:
   BEDROCK_MODEL_ID: "anthropic.claude-haiku-4-5-20251001-v1:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
-
 serviceAccount:
   create: true
   name: ai-analyzer
-
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 10001
   fsGroup: 10001
-
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
   readOnlyRootFilesystem: true
-
 # Name of the docker-registry Secret that holds the ECR pull credentials.
 # Rotated by the CronJob below (see ecrTokenRefresh).
 imagePullSecret:
   name: ecr-pull
-
 # CronJob that refreshes `imagePullSecret.name` before the 12h ECR token expires.
 # Required because k3s does not auto-authenticate to ECR from the node's
 # instance profile the way EKS does (see issue #57).
