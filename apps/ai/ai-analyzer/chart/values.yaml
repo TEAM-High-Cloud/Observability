@@ -26,10 +26,11 @@ env:
   LOKI_MAX_LINES: "200"
   # Bedrock
   BEDROCK_REGION: "ap-northeast-2"
-  # GLOBAL Haiku 4.5는 Marketplace subscription 미해결, APAC Sonnet 4는
-  # Legacy로 마킹돼 호출 거부. 현재 활성 APAC 옵션 중 가장 강한 Sonnet 3.5 v2 사용.
-  # GLOBAL Haiku 4.5 / Sonnet 4 복귀는 별 이슈.
-  BEDROCK_MODEL_ID: "apac.anthropic.claude-3-5-sonnet-20241022-v2:0"
+  # Anthropic 모델은 Marketplace subscription 미해결 (APAC Sonnet 4는
+  # Legacy, Sonnet 3.5 v2도 marketplace 에러 간헐 발생). Amazon Nova Pro로
+  # 우회 — APAC native + Amazon 직접 제공이라 Marketplace 무관.
+  # Anthropic 모델 복귀는 별 이슈.
+  BEDROCK_MODEL_ID: "apac.amazon.nova-pro-v1:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
   # Slack channel ID (e.g. C0123456789) — find via the Slack UI or
