@@ -26,11 +26,10 @@ env:
   LOKI_MAX_LINES: "200"
   # Bedrock
   BEDROCK_REGION: "ap-northeast-2"
-  # Anthropic 모델은 Marketplace subscription 미해결 (APAC Sonnet 4는
-  # Legacy, Sonnet 3.5 v2도 marketplace 에러 간헐 발생). Amazon Nova Pro로
-  # 우회 — APAC native + Amazon 직접 제공이라 Marketplace 무관.
-  # Anthropic 모델 복귀는 별 이슈.
-  BEDROCK_MODEL_ID: "apac.amazon.nova-pro-v1:0"
+  # 발표 인지도 + 능력 균형을 위해 APAC Claude 3.5 Sonnet v2 사용.
+  # Marketplace 검증 이슈가 발생하면 콘솔에서 model access 명시적 enable
+  # 필요. GLOBAL Haiku 4.5 복귀는 Marketplace 정리 후 별 이슈로.
+  BEDROCK_MODEL_ID: "apac.anthropic.claude-3-5-sonnet-20241022-v2:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
   # Slack channel ID (e.g. C0123456789) — find via the Slack UI or
