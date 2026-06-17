@@ -25,6 +25,13 @@ SLACK_FINGERPRINT_MARKER = os.getenv("SLACK_FINGERPRINT_MARKER", "fingerprint=")
 SLACK_HISTORY_LOOKBACK = int(os.getenv("SLACK_HISTORY_LOOKBACK", "30"))
 HTTP_TIMEOUT = float(os.getenv("SLACK_HTTP_TIMEOUT", "8"))
 
+# Per-message sender override so the AI analyzer card is visually distinct
+# from the raw alert posted by the same App. Requires `chat:write.customize`
+# scope on the Slack App. If unset, the message uses the App's own name/icon.
+SLACK_USERNAME = os.getenv("SLACK_USERNAME", "")
+SLACK_ICON_URL = os.getenv("SLACK_ICON_URL", "")
+SLACK_ICON_EMOJI = os.getenv("SLACK_ICON_EMOJI", "")
+
 
 def _enabled() -> bool:
     return bool(SLACK_BOT_TOKEN) and bool(SLACK_CHANNEL)
@@ -140,6 +147,13 @@ async def post_thread_reply(result: dict, fingerprint: str | None) -> bool:
         "blocks": blocks,
         "text": result.get("summary") or "AI 분석",
     }
+    if SLACK_USERNAME:
+        payload["username"] = SLACK_USERNAME
+    # icon_url takes priority; fall back to icon_emoji if only that is set.
+    if SLACK_ICON_URL:
+        payload["icon_url"] = SLACK_ICON_URL
+    elif SLACK_ICON_EMOJI:
+        payload["icon_emoji"] = SLACK_ICON_EMOJI
     if fingerprint:
         ts = await _find_thread_ts(SLACK_CHANNEL, fingerprint)
         if ts:
