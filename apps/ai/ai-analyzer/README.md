@@ -100,10 +100,13 @@ Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` 
 
 ## Slack 셋업 (PR3 머지 후 1회)
 
-1. `api.slack.com/apps` → **Create New App** → from scratch → 이름 `obs-ai-analyzer`
+기존 `alert-observability` App을 그대로 augment하는 경로:
+
+1. `api.slack.com/apps` → 기존 App 선택 (예: `alert-observability`)
 2. **OAuth & Permissions** → Bot Token Scopes:
    - `chat:write`
    - `channels:history` (public 채널) 또는 `groups:history` (private)
+   - `chat:write.customize` — AI 분석 메시지의 sender 이름/아이콘 override용
 3. **Install to Workspace** → **Bot User OAuth Token** (`xoxb-…`) 복사
 4. 대상 채널(예: `#alerts`)에 `/invite @obs-ai-analyzer`
 5. K8s Secret 생성:
