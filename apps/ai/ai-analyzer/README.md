@@ -22,15 +22,17 @@ Alertmanager ─────┤   (route continue: true)
 
 ## 상태
 
-PR1 (스캐폴딩) — FastAPI 스켈레톤만. 실제 분석/Slack은 PR2/PR3.
+PR2 (LLM 본체 붙이기) — Loki/VM 컨텍스트 수집 + 런북 매칭 + Bedrock 호출
+까지. 결과는 stdout에 구조화 로그로 출력. Slack은 PR3.
 
-- [x] FastAPI: `/healthz`, `/webhook` (payload 로깅만)
+- [x] FastAPI: `/healthz`, `/webhook`
 - [x] in-repo Helm chart
 - [x] ArgoCD Application
 - [x] ECR 빌드 워크플로우 (OIDC) + 자동 image tag bump PR
-- [ ] Loki/VM 컨텍스트 수집 (PR2)
-- [ ] Bedrock 호출 + prompt caching (PR2)
-- [ ] 런북 markdown KB (PR2)
+- [x] Loki/VM 컨텍스트 수집 (PR2)
+- [x] 런북 markdown KB (PR2)
+- [x] Bedrock 호출 (PR2)
+- [ ] Bedrock prompt caching (별 작업 — baseline 검증 후)
 - [ ] Slack thread reply (Block Kit) (PR3)
 - [ ] Alertmanager route 분기 (PR3)
 - [ ] Bedrock 비용 모니터링 대시보드 (PR3)
@@ -39,17 +41,56 @@ PR1 (스캐폴딩) — FastAPI 스켈레톤만. 실제 분석/Slack은 PR2/PR3.
 
 ```
 ai-analyzer/
-├── application.yaml      # ArgoCD App (destination: metric / ns: ai-analyzer)
-├── Dockerfile            # python:3.13-slim, non-root, multistage
-├── requirements.txt
-├── app/                  # FastAPI 소스
-│   ├── __init__.py
-│   └── main.py
-└── chart/                # in-repo Helm chart
-    ├── Chart.yaml
-    ├── values.yaml
-    └── templates/
+├── application.yaml          # ArgoCD App (destination: metric / ns: ai-analyzer)
+├── Dockerfile
+├── requirements.txt          # fastapi, uvicorn, httpx, boto3
+├── app/
+│   ├── main.py               # /webhook이 BackgroundTasks로 분석 분기
+│   ├── bedrock.py            # boto3 Converse + 안전 system prompt
+│   ├── context/
+│   │   ├── loki.py           # LogQL ±15m (underscore 정규화)
+│   │   └── vm.py             # PromQL ±15m (dot 유지)
+│   └── runbooks/             # alertname → markdown (4개 + _default)
+└── chart/                    # in-repo Helm chart
 ```
+
+## 분석 흐름 (PR2)
+
+```
+Alertmanager → POST /webhook
+   ↓
+ main.py
+   ├── 즉시 HTTP 200 (Alertmanager retry 방지)
+   └── BackgroundTasks로 알람마다 _analyze_alert 등록
+        ├── loki.fetch  ─┐
+        ├── vm.fetch    ─┴─ asyncio.gather (병렬)
+        ├── runbooks.find(alertname)
+        └── bedrock.analyze(...) ← boto3 sync → executor에서
+               ↓
+            stdout JSON 로그 (alertname, summary, fallback 여부 등)
+```
+
+- 어느 단계든 실패하면 빈 결과 / `summary=None` 으로 진행. 알람 처리 끊지 않음.
+- Bedrock 자격증명: 노드 instance profile → boto3 default chain.
+- Loki는 cross-cluster (Tailscale MagicDNS), VM은 in-cluster ClusterIP.
+
+## 환경 변수 (chart values.env)
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `LOKI_URL` | `http://observ-log-server:31100` | cross-cluster Tailscale endpoint |
+| `VM_URL` | `http://metric-server-victoria-metrics-single-server.victoria-metrics:8428` | in-cluster |
+| `CONTEXT_WINDOW_MINUTES` | `15` | ±N분 컨텍스트 |
+| `LOKI_MAX_LINES` | `200` | 모델에 넘기는 로그 라인 한도 |
+| `BEDROCK_REGION` | `ap-northeast-2` | |
+| `BEDROCK_MODEL_ID` | `anthropic.claude-haiku-4-5-20251001-v1:0` | |
+| `BEDROCK_MAX_TOKENS` | `1024` | |
+| `BEDROCK_TEMPERATURE` | `0.2` | 낮게 — 정확성 우선 |
+
+## 런북 추가 방법
+
+`app/runbooks/<AlertName>.md` 파일 생성. 매칭은 정확한 alertname → 파일명.
+없으면 `_default.md`로 fallback. 코드 수정 없이 markdown만 추가하면 됨.
 
 ## 배포 흐름 (GitOps)
 
