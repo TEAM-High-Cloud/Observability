@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from fastapi import BackgroundTasks, FastAPI, Request
 
-from app import bedrock, runbooks
+from app import bedrock, runbooks, slack
 from app.context import loki, vm
 
 logging.basicConfig(
@@ -62,6 +62,11 @@ async def _analyze_alert(alert: dict, group_key: str | None) -> None:
         "fallback": summary is None,
     }
     log.info("analysis: %s", json.dumps(result, ensure_ascii=False))
+
+    # Best-effort thread reply. Alertmanager carries alert.fingerprint
+    # which our Slack template embeds, so conversations.history can match it.
+    posted = await slack.post_thread_reply(result, alert.get("fingerprint"))
+    log.info("slack posted: %s", posted)
 
 
 @app.get("/healthz")
