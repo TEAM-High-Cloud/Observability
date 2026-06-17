@@ -78,7 +78,7 @@ Alertmanager → POST /webhook
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `LOKI_URL` | `http://observ-log-server:31100` | cross-cluster Tailscale endpoint |
+| `LOKI_URL` | `http://observ-log-server.tail07adfd.ts.net:31100` | cross-cluster Tailscale FQDN — short name은 coredns search 순서에 막힘 |
 | `VM_URL` | `http://metric-server-victoria-metrics-single-server.victoria-metrics:8428` | in-cluster |
 | `CONTEXT_WINDOW_MINUTES` | `15` | ±N분 컨텍스트 |
 | `LOKI_MAX_LINES` | `200` | 모델에 넘기는 로그 라인 한도 |
