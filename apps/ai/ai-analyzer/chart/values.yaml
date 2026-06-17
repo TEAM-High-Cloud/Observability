@@ -44,7 +44,6 @@ env:
   SLACK_USERNAME: "AI 분석 봇"
   SLACK_ICON_URL: "https://raw.githubusercontent.com/TEAM-High-Cloud/Observability/main/apps/ai/ai-analyzer/assets/ai-analyzer-icon.png"
   SLACK_ICON_EMOJI: ":robot_face:"
-
 # Slack Bot OAuth token (xoxb-...) — created manually as a Secret:
 #   kubectl -n ai-analyzer create secret generic ai-analyzer-slack \
 #     --from-literal=token=xoxb-...
@@ -62,7 +61,6 @@ dnsConfig:
     - 100.100.100.100
   searches:
     - tail07adfd.ts.net
-
 serviceAccount:
   create: true
   name: ai-analyzer
