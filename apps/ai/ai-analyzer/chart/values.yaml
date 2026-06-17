@@ -20,6 +20,19 @@ resources:
 
 env:
   LOG_LEVEL: INFO
+  # Cross-cluster Loki on log-server (Tailscale MagicDNS).
+  # Override per environment if the NodePort differs.
+  LOKI_URL: "http://observ-log-server:31100"
+  # In-cluster VictoriaMetrics (same chart as vmalert datasource).
+  VM_URL: "http://metric-server-victoria-metrics-single-server.victoria-metrics:8428"
+  # Context window applied to both Loki and VM range queries.
+  CONTEXT_WINDOW_MINUTES: "15"
+  LOKI_MAX_LINES: "200"
+  # Bedrock
+  BEDROCK_REGION: "ap-northeast-2"
+  BEDROCK_MODEL_ID: "anthropic.claude-haiku-4-5-20251001-v1:0"
+  BEDROCK_MAX_TOKENS: "1024"
+  BEDROCK_TEMPERATURE: "0.2"
 
 serviceAccount:
   create: true
