@@ -2,7 +2,7 @@
 replicaCount: 1
 image:
   repository: 167781471242.dkr.ecr.ap-northeast-2.amazonaws.com/obs-ai-analyzer
-  tag: "db4cdb4"
+  tag: "2e3c2c7"
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
@@ -44,7 +44,6 @@ env:
   SLACK_USERNAME: "AI 분석 봇"
   SLACK_ICON_URL: "https://raw.githubusercontent.com/TEAM-High-Cloud/Observability/main/apps/ai/ai-analyzer/assets/ai-analyzer-icon.png"
   SLACK_ICON_EMOJI: ":robot_face:"
-
 # Slack Bot OAuth token (xoxb-...) — created manually as a Secret:
 #   kubectl -n ai-analyzer create secret generic ai-analyzer-slack \
 #     --from-literal=token=xoxb-...
@@ -62,7 +61,6 @@ dnsConfig:
     - 100.100.100.100
   searches:
     - tail07adfd.ts.net
-
 serviceAccount:
   create: true
   name: ai-analyzer
