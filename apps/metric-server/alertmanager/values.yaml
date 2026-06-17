@@ -37,9 +37,11 @@ config:
     repeat_interval: 12h
     routes:
       # ai-analyzer가 분석/요약 후 Slack 스레드에 reply.
-      # continue: true 로 두어 slack-default 경로도 그대로 발사 (즉시 알림 유지).
+      # continue: true 는 "같은 부모의 다음 sibling 평가"라 부모 receiver(slack-default)
+      # 가 자동으로 fall-through되지 않음. 두 receiver 모두 child로 명시한다.
       - receiver: ai-analyzer
         continue: true
+      - receiver: slack-default
 
   receivers:
     - name: slack-default
