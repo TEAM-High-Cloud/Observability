@@ -26,10 +26,10 @@ env:
   LOKI_MAX_LINES: "200"
   # Bedrock
   BEDROCK_REGION: "ap-northeast-2"
-  # Haiku 4.5 requires inference profile invocation (on-demand throughput
-  # is rejected). Use the GLOBAL cross-region profile (APAC has no
-  # Haiku 4.5 profile as of 2026-06).
-  BEDROCK_MODEL_ID: "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+  # GLOBAL Haiku 4.5는 Marketplace subscription이 콘솔에서 처리되지 않아
+  # 우회로 APAC Sonnet 4 사용. APAC profile은 region-native라 모델 access
+  # enable이 그대로 적용됨. GLOBAL Haiku 4.5로의 복귀는 별 이슈로.
+  BEDROCK_MODEL_ID: "apac.anthropic.claude-sonnet-4-20250514-v1:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
 # Pod DNS — Tailscale MagicDNS needs explicit nameserver/search so the

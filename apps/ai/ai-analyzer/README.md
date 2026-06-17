@@ -83,7 +83,7 @@ Alertmanager → POST /webhook
 | `CONTEXT_WINDOW_MINUTES` | `15` | ±N분 컨텍스트 |
 | `LOKI_MAX_LINES` | `200` | 모델에 넘기는 로그 라인 한도 |
 | `BEDROCK_REGION` | `ap-northeast-2` | |
-| `BEDROCK_MODEL_ID` | `anthropic.claude-haiku-4-5-20251001-v1:0` | |
+| `BEDROCK_MODEL_ID` | `apac.anthropic.claude-sonnet-4-20250514-v1:0` | APAC inference profile (GLOBAL Haiku 4.5는 Marketplace 구독 이슈로 임시 우회) |
 | `BEDROCK_MAX_TOKENS` | `1024` | |
 | `BEDROCK_TEMPERATURE` | `0.2` | 낮게 — 정확성 우선 |
 
