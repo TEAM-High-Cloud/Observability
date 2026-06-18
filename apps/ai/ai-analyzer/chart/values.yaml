@@ -26,9 +26,10 @@ env:
   LOKI_MAX_LINES: "200"
   # Bedrock
   BEDROCK_REGION: "ap-northeast-2"
-  # APAC Sonnet 3.5 v2 / Sonnet 4 모두 레거시로 deprecated.
-  # 활성 Anthropic 모델 중 가장 강한 GLOBAL Claude Sonnet 4.5 사용.
-  BEDROCK_MODEL_ID: "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+  # Anthropic 모델(Sonnet 4.5)이 AWS Marketplace subscription 처리 간헐 실패
+  # (한 번 성공 후 다시 막힘). 발표/시연 안정성 + 비용(약 1/4) 우선해
+  # Amazon Nova Pro로 정착. APAC native + Amazon 직접 제공이라 Marketplace 무관.
+  BEDROCK_MODEL_ID: "apac.amazon.nova-pro-v1:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
   # Slack channel ID (e.g. C0123456789) — find via the Slack UI or
