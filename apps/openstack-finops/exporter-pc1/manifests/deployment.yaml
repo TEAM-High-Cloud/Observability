@@ -22,10 +22,18 @@ spec:
           args:
             - --endpoint-type=internal
             - --disable-service.network
-            - --disable-service.loadbalancer
+            - --disable-service.load-balancer
             - --disable-service.image
             - --disable-service.identity
             - --disable-service.object-store
+            - --disable-service.container-infra
+            - --disable-service.baremetal
+            - --disable-service.database
+            - --disable-service.dns
+            - --disable-service.sharev2
+            - --disable-service.orchestration
+            - --disable-service.gnocchi
+            - --disable-service.placement
             - openstack
           ports:
             - name: metrics
