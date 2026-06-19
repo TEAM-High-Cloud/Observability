@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-gateway-pc1-release
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: 'https://open-telemetry.github.io/opentelemetry-helm-charts'
+      chart: opentelemetry-collector
+      targetRevision: 0.97.1
+      helm:
+        releaseName: otel-gateway
+        valueFiles:
+          - '$values/apps/openstack-finops/gateway-pc1/values.yaml'
+    - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
+      targetRevision: HEAD
+      ref: values
+  destination:
+    name: pc1
+    namespace: openstack-finops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
