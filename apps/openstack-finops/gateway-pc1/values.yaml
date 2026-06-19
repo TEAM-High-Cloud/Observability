@@ -5,20 +5,6 @@ replicaCount: 1
 image:
   repository: otel/opentelemetry-collector-k8s
 
-dnsPolicy: None
-dnsConfig:
-  nameservers:
-    - 10.43.0.10
-    - 100.100.100.100
-  searches:
-    - openstack-finops.svc.cluster.local
-    - svc.cluster.local
-    - cluster.local
-    - tail07adfd.ts.net
-  options:
-    - name: ndots
-      value: "5"
-
 resources:
   requests:
     cpu: 50m
@@ -51,9 +37,11 @@ config:
           action: upsert
 
   exporters:
+    # observ-metric-server는 Tailscale MagicDNS인데 k3s CoreDNS가 .ts.net을
+    # 모름 → resolver가 NXDOMAIN으로 끝남. 가장 단순하게 Tailscale IP를 박는다.
     otlphttp/vm:
       metrics_endpoint: >-
-        http://observ-metric-server:30428/opentelemetry/api/v1/push
+        http://100.87.44.83:30428/opentelemetry/api/v1/push
       encoding: proto
       timeout: 15s
       sending_queue:
