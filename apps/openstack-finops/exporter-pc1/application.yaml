@@ -8,17 +8,12 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  sources:
-    - repoURL: 'https://openstack-exporter.github.io/helm-charts'
-      chart: openstack-exporter
-      targetRevision: 0.6.0
-      helm:
-        releaseName: openstack-exporter
-        valueFiles:
-          - '$values/apps/openstack-finops/exporter-pc1/values.yaml'
-    - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
-      targetRevision: HEAD
-      ref: values
+  source:
+    repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
+    targetRevision: HEAD
+    path: apps/openstack-finops/exporter-pc1/manifests
+    directory:
+      recurse: false
   destination:
     name: pc1
     namespace: openstack-finops
