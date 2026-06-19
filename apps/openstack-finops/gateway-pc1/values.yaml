@@ -1,8 +1,4 @@
 ---
-# Cluster-scope scraper. Hypervisor의 host metric은 기존 daemonset이 담당하고,
-# 여기서는 openstack-exporter (cluster service) 의 Prometheus endpoint만 흡수해
-# OTLP로 metric server에 push 한다.
-
 mode: deployment
 replicaCount: 1
 
@@ -62,7 +58,7 @@ config:
         processors: [resource/cluster, batch]
         exporters: [otlphttp/vm]
 
-# 다른 노드의 hostmetrics 파이프라인(daemonset)과 겹치지 않게 disable.
+# node-scoped 메트릭은 기존 daemonset이 담당하므로 gateway에선 끈다.
 presets:
   hostMetrics:
     enabled: false

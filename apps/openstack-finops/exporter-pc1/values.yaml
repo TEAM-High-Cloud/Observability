@@ -1,19 +1,12 @@
 ---
-# openstack-exporter는 Keystone에 인증해 Nova/Cinder/Neutron/Glance에서
-# 자원 메타데이터·사용량을 긁어 Prometheus 포맷으로 노출한다.
-# Cloud config(=clouds.yaml)는 secret 으로 별도 주입한다.
-
 replicaCount: 1
 
 image:
   repository: ghcr.io/openstack-exporter/openstack-exporter
   pullPolicy: IfNotPresent
 
-# 어떤 OpenStack cloud를 볼지. clouds.yaml의 키와 일치해야 함.
 cloud: openstack
 
-# 노출할 컴포넌트. 1단계 FinOps에는 nova/cinder/neutron만으로 충분.
-# glance/octavia/heat 등은 비용 비중 작아 우선 끔.
 service:
   type: ClusterIP
   port: 9180
@@ -25,9 +18,6 @@ extraArgs:
   - --disable-service.identity
   - --disable-service.object-store
 
-# clouds.yaml은 수동 생성한 secret을 마운트한다.
-# kubectl -n openstack-finops create secret generic openstack-exporter-cloud-config \
-#   --from-file=clouds.yaml=/etc/kolla/clouds.yaml
 existingSecret:
   name: openstack-exporter-cloud-config
   key: clouds.yaml
@@ -40,7 +30,6 @@ resources:
     cpu: 200m
     memory: 256Mi
 
-# Prometheus pull metric 표준 annotation. OTel gateway가 이 hint로 scrape 대상 발견 가능.
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "9180"
