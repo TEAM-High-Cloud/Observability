@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openstack-exporter
+  labels:
+    app.kubernetes.io/name: openstack-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openstack-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openstack-exporter
+    spec:
+      containers:
+        - name: openstack-exporter
+          image: ghcr.io/openstack-exporter/openstack-exporter:1.6.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --endpoint-type=internal
+            - --disable-service.network
+            - --disable-service.loadbalancer
+            - --disable-service.image
+            - --disable-service.identity
+            - --disable-service.object-store
+            - openstack
+          ports:
+            - name: metrics
+              containerPort: 9180
+          volumeMounts:
+            - name: cloud-config
+              mountPath: /etc/openstack
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - name: cloud-config
+          secret:
+            secretName: openstack-exporter-cloud-config
