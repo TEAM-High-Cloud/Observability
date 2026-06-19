@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openstack-exporter-pc1-release
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: 'https://openstack-exporter.github.io/helm-charts'
+      chart: openstack-exporter
+      targetRevision: 0.6.0
+      helm:
+        releaseName: openstack-exporter
+        valueFiles:
+          - '$values/apps/openstack-finops/exporter-pc1/values.yaml'
+    - repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
+      targetRevision: HEAD
+      ref: values
+  destination:
+    name: pc1
+    namespace: openstack-finops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
