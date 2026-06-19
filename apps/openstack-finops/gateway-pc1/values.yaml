@@ -5,7 +5,19 @@ replicaCount: 1
 image:
   repository: otel/opentelemetry-collector-k8s
 
-dnsPolicy: ClusterFirst
+dnsPolicy: None
+dnsConfig:
+  nameservers:
+    - 10.43.0.10
+    - 100.100.100.100
+  searches:
+    - openstack-finops.svc.cluster.local
+    - svc.cluster.local
+    - cluster.local
+    - tail07adfd.ts.net
+  options:
+    - name: ndots
+      value: "5"
 
 resources:
   requests:
