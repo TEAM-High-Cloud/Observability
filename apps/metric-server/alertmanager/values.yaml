@@ -48,13 +48,22 @@ config:
       slack_configs:
         - channel: '#alerts'
           send_resolved: true
-          title: '{{ .GroupLabels.alertname }} - {{ .Status }}'
+          # title_link 빈 값으로 둠: Alertmanager default(ExternalURL)가 cluster
+          # internal로 가서 브라우저에서 도달 불가. 링크 자체를 제거한다.
+          title_link: ''
+          title: >-
+            {{ if eq .Status "firing" }}🔥{{ else }}✅{{ end }}
+            [{{ .GroupLabels.severity }}]
+            {{ .GroupLabels.alertname }}
+            — {{ .GroupLabels.cluster }}
+          color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
           text: |-
             {{ range .Alerts }}
-            *Alert:* {{ .Annotations.summary }}
-            *Severity:* `{{ .Labels.severity }}`
-            *Cluster:* `{{ .Labels.cluster }}`
-            *Description:* {{ .Annotations.description }}
+            *상태:* `{{ .Status }}`
+            *요약:* {{ .Annotations.summary }}
+            *심각도:* `{{ .Labels.severity }}`
+            *클러스터:* `{{ .Labels.cluster }}`
+            *설명:* {{ .Annotations.description }}
             `fingerprint={{ .Fingerprint }}`
             {{ end }}
 
