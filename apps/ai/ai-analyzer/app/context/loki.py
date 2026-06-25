@@ -108,3 +108,44 @@ async def fetch(alert: dict, when: datetime | None = None) -> list[str]:
     for stream in streams:
         lines.extend(_format_lines(stream.get("values", [])))
     return lines[:MAX_LINES]
+
+
+async def fetch_logql(
+    logql: str,
+    lookback_minutes: int = 15,
+    limit: int = 100,
+    when: datetime | None = None,
+) -> list[str]:
+    """Run an arbitrary LogQL range query for the agent's tool use.
+
+    Caller-supplied limit is clamped to MAX_LINES so a runaway tool call
+    can't drag in megabytes of logs. Soft-fails: returns [] on error.
+    """
+    if not LOKI_URL:
+        return []
+    if not logql or not logql.strip():
+        return []
+    safe_limit = max(1, min(limit, MAX_LINES))
+
+    when = when or datetime.now(timezone.utc)
+    start = when - timedelta(minutes=lookback_minutes)
+    params = {
+        "query": logql,
+        "start": int(start.timestamp() * 1e9),
+        "end": int(when.timestamp() * 1e9),
+        "limit": safe_limit,
+        "direction": "backward",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+            r = await client.get(f"{LOKI_URL}/loki/api/v1/query_range", params=params)
+            r.raise_for_status()
+            streams = r.json().get("data", {}).get("result", []) or []
+    except Exception as e:
+        log.warning("loki tool query failed: %s", e)
+        return []
+
+    lines: list[str] = []
+    for stream in streams:
+        lines.extend(_format_lines(stream.get("values", [])))
+    return lines[:safe_limit]

@@ -107,6 +107,7 @@ def _format_blocks(result: dict) -> list[dict]:
     loki_n = result.get("loki_lines", 0)
     vm_n = result.get("vm_samples", 0)
     runbook_matched = result.get("runbook_matched", False)
+    iters = result.get("agent_iterations", 0)
 
     header_bits = [f"🤖 AI 분석: {alertname}"]
     if severity:
@@ -119,6 +120,8 @@ def _format_blocks(result: dict) -> list[dict]:
         f"loki_lines={loki_n} · vm_samples={vm_n} · "
         f"runbook={'✓' if runbook_matched else '✗'}"
     )
+    if iters:
+        footer += f" · agent_iters={iters}"
 
     # Slack section text caps at 3000 chars; truncate with a marker.
     if len(summary) > 2900:

@@ -37,6 +37,14 @@ env:
   BEDROCK_MODEL_ID: "apac.amazon.nova-pro-v1:0"
   BEDROCK_MAX_TOKENS: "1024"
   BEDROCK_TEMPERATURE: "0.2"
+  # Agentic loop — model can call query_metrics / query_logs /
+  # list_recent_alerts as tools to dig deeper before concluding.
+  # Set to "false" to fall back to the single-shot analyze() path.
+  AGENT_ENABLED: "true"
+  AGENT_MAX_ITERATIONS: "5"
+  # Alertmanager endpoint for list_recent_alerts. In-cluster service —
+  # uses cluster DNS, not Tailscale, so no IP pinning needed.
+  AM_URL: "http://alertmanager.alertmanager:9093"
   # Slack channel ID (e.g. C0123456789) — find via the Slack UI or
   # conversations.list. Empty means "do not post to Slack".
   SLACK_CHANNEL: "C0B7SHREBAB"
