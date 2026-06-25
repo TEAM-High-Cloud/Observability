@@ -16,9 +16,14 @@ resources:
     memory: 512Mi
 env:
   LOG_LEVEL: INFO
-  # Cross-cluster Loki on log-server (Tailscale MagicDNS).
-  # Override per environment if the NodePort differs.
-  LOKI_URL: "http://observ-log-server.tail07adfd.ts.net:31100"
+  # Cross-cluster Loki on log-server. We pin the Tailscale IP rather than the
+  # MagicDNS FQDN because the metric-cluster pod's resolv.conf lists CoreDNS
+  # first and Tailscale DNS (100.100.100.100) second; CoreDNS returns NXDOMAIN
+  # for tail07adfd.ts.net (no forward zone) and glibc never falls back to the
+  # second nameserver. Same workaround as the otel-gateway endpoint (#76).
+  # Update the IP if observ-log-server is recreated (rare — Tailnet IPs are
+  # stable per node).
+  LOKI_URL: "http://100.68.2.91:31100"
   # In-cluster VictoriaMetrics (same chart as vmalert datasource).
   VM_URL: "http://metric-server-victoria-metrics-single-server.victoria-metrics:8428"
   # Context window applied to both Loki and VM range queries.

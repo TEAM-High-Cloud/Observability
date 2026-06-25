@@ -84,7 +84,7 @@ Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` 
 
 | 변수 | 기본값 | 설명 |
 |---|---|---|
-| `LOKI_URL` | `http://observ-log-server.tail07adfd.ts.net:31100` | cross-cluster Tailscale FQDN — short name은 coredns search 순서에 막힘 |
+| `LOKI_URL` | `http://100.68.2.91:31100` | cross-cluster log-server Tailscale IP. MagicDNS FQDN은 pod resolv.conf의 CoreDNS 우선순위 때문에 NXDOMAIN 처리되어 fallback 안 됨 — #76 패턴과 동일 |
 | `VM_URL` | `http://metric-server-victoria-metrics-single-server.victoria-metrics:8428` | in-cluster |
 | `CONTEXT_WINDOW_MINUTES` | `15` | ±N분 컨텍스트 |
 | `LOKI_MAX_LINES` | `200` | 모델에 넘기는 로그 라인 한도 |
