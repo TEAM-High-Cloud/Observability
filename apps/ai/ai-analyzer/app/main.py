@@ -45,10 +45,16 @@ async def _analyze_alert(alert: dict, group_key: str | None) -> None:
     )
     runbook = runbooks.find(alertname)
 
-    # boto3 is sync — offload to a thread so we don't block the loop.
-    summary = await asyncio.get_event_loop().run_in_executor(
-        None, bedrock.analyze, alert, loki_lines, vm_samples, runbook
-    )
+    iterations = 0
+    if bedrock.AGENT_ENABLED:
+        summary, iterations = await bedrock.analyze_agentic(
+            alert, loki_lines, vm_samples, runbook, fingerprint=alert.get("fingerprint"),
+        )
+    else:
+        # boto3 is sync — offload to a thread so we don't block the loop.
+        summary = await asyncio.get_event_loop().run_in_executor(
+            None, bedrock.analyze, alert, loki_lines, vm_samples, runbook
+        )
 
     result = {
         "alertname": alertname,
@@ -58,6 +64,7 @@ async def _analyze_alert(alert: dict, group_key: str | None) -> None:
         "loki_lines": len(loki_lines),
         "vm_samples": len(vm_samples),
         "runbook_matched": bool(runbook) and not runbook.startswith("# Default runbook"),
+        "agent_iterations": iterations,
         "summary": summary,
         "fallback": summary is None,
     }

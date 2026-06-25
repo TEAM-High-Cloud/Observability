@@ -83,3 +83,42 @@ async def fetch(alert: dict, when: datetime | None = None) -> list[dict]:
         for ts, val in series.get("values", []):
             samples.append({"ts": ts, "value": val})
     return samples
+
+
+async def fetch_promql(
+    promql: str,
+    lookback_minutes: int = 15,
+    when: datetime | None = None,
+) -> list[dict]:
+    """Run an arbitrary PromQL/MetricsQL range query for the agent's tool use.
+
+    Soft-fails: returns [] on any error.
+    """
+    if not VM_URL:
+        return []
+    if not promql or not promql.strip():
+        return []
+
+    when = when or datetime.now(timezone.utc)
+    start = when - timedelta(minutes=lookback_minutes)
+    params = {
+        "query": promql,
+        "start": int(start.timestamp()),
+        "end": int(when.timestamp()),
+        "step": STEP_SECONDS,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+            r = await client.get(f"{VM_URL}/api/v1/query_range", params=params)
+            r.raise_for_status()
+            result = r.json().get("data", {}).get("result", []) or []
+    except Exception as e:
+        log.warning("vm tool query failed: %s", e)
+        return []
+
+    samples: list[dict] = []
+    for series in result:
+        metric = series.get("metric", {})
+        for ts, val in series.get("values", []):
+            samples.append({"ts": ts, "value": val, "metric": metric})
+    return samples

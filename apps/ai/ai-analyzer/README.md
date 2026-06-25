@@ -92,6 +92,21 @@ Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` 
 | `BEDROCK_MODEL_ID` | `apac.anthropic.claude-sonnet-4-20250514-v1:0` | APAC inference profile (GLOBAL Haiku 4.5는 Marketplace 구독 이슈로 임시 우회) |
 | `BEDROCK_MAX_TOKENS` | `1024` | |
 | `BEDROCK_TEMPERATURE` | `0.2` | 낮게 — 정확성 우선 |
+| `AGENT_ENABLED` | `true` | tool-using agentic loop 활성화. `false` 시 single-shot 경로 fallback |
+| `AGENT_MAX_ITERATIONS` | `5` | 한 알람 분석당 최대 model 호출 횟수 |
+| `AM_URL` | `http://alertmanager.alertmanager:9093` | `list_recent_alerts` 도구의 Alertmanager v2 endpoint |
+
+## Agentic 도구 (Tier 1)
+
+`AGENT_ENABLED=true` 일 때 모델이 호출 가능한 도구:
+
+| Tool | 인자 | 동작 |
+|---|---|---|
+| `query_metrics` | `promql`, `lookback_minutes` (≤360) | VictoriaMetrics 추가 PromQL 조회. 라벨은 dot 표기 |
+| `query_logs` | `logql`, `lookback_minutes` (≤360), `limit` (≤500) | Loki 추가 LogQL 조회. 라벨은 underscore |
+| `list_recent_alerts` | `window_minutes` (≤360) | Alertmanager 활성 알람 (트리거된 본인 제외). cascade 판별용 |
+
+모든 도구는 read-only. 같은 (도구, 인자) 2회 중복 호출 감지 시 즉시 종료. 결과는 Slack footer에 `agent_iters=N` 으로 표시됨.
 
 ## 런북 추가 방법
 
