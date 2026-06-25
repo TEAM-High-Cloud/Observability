@@ -29,8 +29,6 @@ _PASSTHROUGH_LABELS: tuple[str, ...] = (
     "k8s_namespace_name",
     "k8s_pod_name",
     "k8s_node_name",
-    "cluster",
-    "namespace",
 )
 
 
@@ -44,10 +42,20 @@ def _build_selector(labels: dict[str, str]) -> str:
         norm = _dot_to_underscore(k)
         if norm in _PASSTHROUGH_LABELS and v:
             parts.append(f'{norm}="{v}"')
+        elif norm == "cluster" and v:
+            parts.append(f'k8s_cluster_name="{v}"')
     if not parts:
         # Fall back to the broadest filter so the LLM still gets something.
         parts.append('k8s_cluster_name=~".+"')
     return "{" + ",".join(parts) + "}"
+
+
+def _query_from_alert(alert: dict) -> str:
+    annotations = alert.get("annotations", {}) or {}
+    query = annotations.get("logql_context_query")
+    if query:
+        return query
+    return _build_selector(alert.get("labels", {}) or {})
 
 
 def _format_lines(values: Iterable[list[str]]) -> list[str]:
@@ -76,9 +84,7 @@ async def fetch(alert: dict, when: datetime | None = None) -> list[str]:
     start = when - timedelta(minutes=WINDOW_MINUTES)
     end = when + timedelta(minutes=WINDOW_MINUTES)
 
-    labels = alert.get("labels", {}) or {}
-    selector = _build_selector(labels)
-    query = f"{selector}"
+    query = _query_from_alert(alert)
 
     params = {
         "query": query,
