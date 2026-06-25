@@ -2,7 +2,7 @@
 replicaCount: 1
 image:
   repository: 167781471242.dkr.ecr.ap-northeast-2.amazonaws.com/obs-ai-analyzer
-  tag: "d3d5d85"
+  tag: "847a302"
   pullPolicy: IfNotPresent
 service:
   type: ClusterIP
