@@ -12,8 +12,6 @@ spec:
     repoURL: 'https://github.com/TEAM-High-Cloud/Observability'
     targetRevision: HEAD
     path: apps/openstack-finops/exporter-pc1/manifests
-    directory:
-      recurse: false
   destination:
     name: pc1
     namespace: openstack-finops
