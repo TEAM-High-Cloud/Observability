@@ -44,8 +44,6 @@ def _build_selector(labels: dict[str, str]) -> str:
             parts.append(f'{norm}="{v}"')
         elif norm == "cluster" and v:
             parts.append(f'k8s_cluster_name="{v}"')
-        elif norm == "namespace" and v:
-            parts.append(f'k8s_namespace_name="{v}"')
     if not parts:
         # Fall back to the broadest filter so the LLM still gets something.
         parts.append('k8s_cluster_name=~".+"')

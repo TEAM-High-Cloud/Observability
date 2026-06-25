@@ -114,13 +114,13 @@ extraObjects:
     data:
       rules.yaml: |
         groups:
-          - name: openstack-logs
+          - name: openstack-nodes-host-logs
             interval: 30s
             rules:
               - alert: HighErrorLogRate
                 expr: >-
                   sum by (k8s_cluster_name) (
-                  rate({k8s_cluster_name=~".+"}
+                  rate({k8s_cluster_name=~"pc1|pc2", log_file_name="syslog"}
                   |~ "(?i)error|fatal|panic" [5m])
                   ) > 2
                 for: 5m
@@ -134,17 +134,19 @@ extraObjects:
                     High error log rate on
                     {{ `{{ $labels.k8s_cluster_name }}` }}
                   description: >-
-                    Error log lines > 2/sec sustained 5m on
+                    Host syslog error lines > 2/sec sustained 5m on
                     {{ `{{ $labels.k8s_cluster_name }}` }}.
                   logql_context_query: >-
-                    {k8s_cluster_name="{{ `{{ $labels.k8s_cluster_name }}` }}"}
+                    {k8s_cluster_name="{{ `{{ $labels.k8s_cluster_name }}` }}",
+                    log_file_name="syslog"}
                     |~ "(?i)error|fatal|panic"
                   threshold: 'error|fatal|panic > 2 lines/sec for 5m'
 
               - alert: OOMKillDetected
                 expr: >-
                   sum by (k8s_cluster_name) (
-                  count_over_time({log_file_name="syslog"}
+                  count_over_time({k8s_cluster_name=~"pc1|pc2",
+                  log_file_name="syslog"}
                   |~ "(?i)out of memory|oom-killer|killed process" [2m])
                   ) > 0
                 for: 0m
@@ -166,37 +168,36 @@ extraObjects:
                     |~ "(?i)out of memory|oom-killer|killed process"
                   threshold: 'OOM signature >= 1 line in 2m'
 
-              - alert: AuthFailureSpike
+              - alert: FilesystemPressureLogDetected
                 expr: >-
                   sum by (k8s_cluster_name) (
-                  rate({log_file_name="syslog"}
-                  |~ "(?i)authentication failure|failed password" [5m])
-                  ) > 0.1
-                for: 5m
+                  count_over_time({k8s_cluster_name=~"pc1|pc2",
+                  log_file_name="syslog"}
+                  |~ "(?i)no space left|disk full|read-only file system|filesystem.*full" [5m])
+                  ) > 0
+                for: 0m
                 labels:
                   severity: warning
                   cluster: '{{ `{{ $labels.k8s_cluster_name }}` }}'
                   source: loki
-                  category: auth
+                  category: filesystem
                 annotations:
                   summary: >-
-                    Auth failure spike on
+                    Filesystem pressure log detected on
                     {{ `{{ $labels.k8s_cluster_name }}` }}
                   description: >-
-                    Failed auth attempts > 0.1/sec for 5m on
+                    Host syslog contains filesystem pressure signals on
                     {{ `{{ $labels.k8s_cluster_name }}` }}.
                   logql_context_query: >-
                     {k8s_cluster_name="{{ `{{ $labels.k8s_cluster_name }}` }}",
                     log_file_name="syslog"}
-                    |~ "(?i)authentication failure|failed password"
-                  threshold: 'auth failures > 0.1 lines/sec for 5m'
+                    |~ "(?i)no space left|disk full|read-only file system|filesystem.*full"
+                  threshold: 'filesystem pressure signature >= 1 line in 5m'
 
               - alert: HostSyslogSilent
                 expr: >-
-                  sum by (k8s_cluster_name) (
-                  rate({log_file_name="syslog",
-                  k8s_cluster_name="pc1"}[5m])
-                  ) == 0
+                  absent_over_time({k8s_cluster_name="pc1",
+                  log_file_name="syslog"}[5m])
                 for: 5m
                 labels:
                   severity: warning
@@ -210,4 +211,23 @@ extraObjects:
                     may be down.
                   logql_context_query: >-
                     {k8s_cluster_name="pc1", log_file_name="syslog"}
+                  threshold: 'syslog == 0 lines/sec for 5m'
+
+              - alert: HostSyslogSilent
+                expr: >-
+                  absent_over_time({k8s_cluster_name="pc2",
+                  log_file_name="syslog"}[5m])
+                for: 5m
+                labels:
+                  severity: warning
+                  cluster: pc2
+                  source: loki
+                  category: log-silence
+                annotations:
+                  summary: 'pc2 syslog silent for 5m (host stalled?)'
+                  description: >-
+                    No syslog lines from pc2 in 5 minutes. Host or rsyslog
+                    may be down.
+                  logql_context_query: >-
+                    {k8s_cluster_name="pc2", log_file_name="syslog"}
                   threshold: 'syslog == 0 lines/sec for 5m'
