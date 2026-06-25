@@ -19,6 +19,18 @@ loki:
 
   limits_config:
     retention_period: 168h
+    # OTLP attribute promotion: Loki keeps OTel record attributes as
+    # structured_metadata by default, which means `{log_file_name="syslog"}`
+    # stream selectors don't match. We promote `log.file.name` (set by the
+    # filelog receiver — host syslog vs k3s container logs) to a stream
+    # label so host-log alert rules and ai-analyzer logql_context_query
+    # work as written. Cardinality stays low (a handful of file names
+    # per node).
+    otlp_config:
+      log_attributes:
+        - action: index_label
+          attributes:
+            - log.file.name
 
   compactor:
     working_directory: /var/loki/compactor
