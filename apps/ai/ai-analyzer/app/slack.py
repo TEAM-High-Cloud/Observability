@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 
 import httpx
 
@@ -22,7 +23,12 @@ log = logging.getLogger("ai-analyzer.slack")
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN", "")
 SLACK_CHANNEL = os.getenv("SLACK_CHANNEL", "")
 SLACK_FINGERPRINT_MARKER = os.getenv("SLACK_FINGERPRINT_MARKER", "fingerprint=")
-SLACK_HISTORY_LOOKBACK = int(os.getenv("SLACK_HISTORY_LOOKBACK", "30"))
+SLACK_HISTORY_LOOKBACK = int(os.getenv("SLACK_HISTORY_LOOKBACK", "100"))
+# Stale-parent guard: ignore Alertmanager parent messages older than this
+# when matching fingerprints. Without it the same alert re-firing hours later
+# would reply into the original (long-stale) thread because the marker is still
+# present in channel history.
+SLACK_PARENT_MAX_AGE_MIN = int(os.getenv("SLACK_PARENT_MAX_AGE_MIN", "30"))
 HTTP_TIMEOUT = float(os.getenv("SLACK_HTTP_TIMEOUT", "8"))
 
 # Per-message sender override so the AI analyzer card is visually distinct
@@ -75,6 +81,21 @@ async def _get(method: str, params: dict) -> dict:
 
 
 async def _find_thread_ts(channel: str, fingerprint: str) -> str | None:
+    """Locate the Alertmanager-posted parent message for `fingerprint`.
+
+    Two failure modes the older implementation hit:
+    - **Stale match**: a same-fingerprint parent from a previous firing was
+      still inside the history slice, so replies kept piling onto an
+      hours-old thread instead of the fresh one.
+    - **First-match bias**: relied on Slack returning messages newest-first;
+      under load that ordering can be perturbed and we'd grab whichever
+      match came back first.
+
+    Fix: collect *every* matching parent within the lookback window, drop
+    the ones older than `SLACK_PARENT_MAX_AGE_MIN`, and pick the newest by
+    ts. Returns None if nothing fresh matches — caller falls back to a new
+    channel message.
+    """
     if not fingerprint:
         return None
     needle = f"{SLACK_FINGERPRINT_MARKER}{fingerprint}"
@@ -83,6 +104,9 @@ async def _find_thread_ts(channel: str, fingerprint: str) -> str | None:
     )
     if not res.get("ok"):
         return None
+
+    cutoff_epoch = time.time() - SLACK_PARENT_MAX_AGE_MIN * 60
+    candidates: list[tuple[float, str]] = []
     for msg in res.get("messages", []):
         text = msg.get("text", "") or ""
         for att in msg.get("attachments", []) or []:
@@ -90,9 +114,21 @@ async def _find_thread_ts(channel: str, fingerprint: str) -> str | None:
         # blocks may contain the marker in section/context text fields
         for block in msg.get("blocks", []) or []:
             text += "\n" + str(block)
-        if needle in text:
-            return msg.get("ts")
-    return None
+        if needle not in text:
+            continue
+        ts_str = msg.get("ts", "")
+        try:
+            ts_f = float(ts_str)
+        except (TypeError, ValueError):
+            continue
+        if ts_f < cutoff_epoch:
+            continue
+        candidates.append((ts_f, ts_str))
+
+    if not candidates:
+        return None
+    candidates.sort(reverse=True)
+    return candidates[0][1]
 
 
 def _format_blocks(result: dict) -> list[dict]:

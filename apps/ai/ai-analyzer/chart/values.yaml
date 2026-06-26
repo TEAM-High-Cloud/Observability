@@ -51,7 +51,14 @@ env:
   # Marker that the Alertmanager Slack template appends to each message so
   # ai-analyzer can match the parent message via conversations.history.
   SLACK_FINGERPRINT_MARKER: "fingerprint="
-  SLACK_HISTORY_LOOKBACK: "30"
+  # Lookback over channel history when matching the parent message. Raised
+  # from 30 → 100 so the fresh parent isn't bumped out of the slice by
+  # ai-analyzer's own standalone fallback posts on busy channels.
+  SLACK_HISTORY_LOOKBACK: "100"
+  # Stale-parent guard: ignore Alertmanager parents older than N minutes
+  # when matching by fingerprint. Without it, the same alert re-firing
+  # hours later replies into the original (long-stale) thread.
+  SLACK_PARENT_MAX_AGE_MIN: "30"
   # 분석 카드 sender override는 분리된 Slack App 도입으로 불필요 (#47 후속).
   # 새 App 자체가 "AI 분석 봇" 이름 + 자체 icon을 가짐 → 채널 thumbnail까지 분리됨.
   # override를 박으면 채널 thread preview의 thumbnail과 충돌하므로 비워둔다.

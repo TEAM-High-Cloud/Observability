@@ -95,6 +95,8 @@ Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` 
 | `AGENT_ENABLED` | `true` | tool-using agentic loop 활성화. `false` 시 single-shot 경로 fallback |
 | `AGENT_MAX_ITERATIONS` | `5` | 한 알람 분석당 최대 model 호출 횟수 |
 | `AM_URL` | `http://alertmanager.alertmanager:9093` | `list_recent_alerts` 도구의 Alertmanager v2 endpoint |
+| `SLACK_HISTORY_LOOKBACK` | `100` | thread parent 검색 시 채널 history slot 개수 |
+| `SLACK_PARENT_MAX_AGE_MIN` | `30` | N분 넘은 같은 fingerprint 부모는 stale로 간주 — 같은 알람 재발화 시 옛 thread 에 reply 박는 것 방지 |
 
 ## Agentic 도구 (Tier 1)
 
