@@ -46,10 +46,25 @@ async def _analyze_alert(alert: dict, group_key: str | None) -> None:
     runbook = runbooks.find(alertname)
 
     iterations = 0
+    agent_fallback = False
     if bedrock.AGENT_ENABLED:
         summary, iterations = await bedrock.analyze_agentic(
             alert, loki_lines, vm_samples, runbook, fingerprint=alert.get("fingerprint"),
         )
+        if summary is None:
+            # The loop produced no final text: either it burned through
+            # AGENT_MAX_ITERATIONS while still requesting tools, or a Bedrock
+            # call raised mid-loop. Either way the operator would otherwise
+            # get an empty analysis, so degrade to the single-shot path with
+            # the 1차 컨텍스트 and post *something* actionable.
+            agent_fallback = True
+            log.warning(
+                "agentic loop returned no answer (iterations=%d); falling back to single-shot",
+                iterations,
+            )
+            summary = await asyncio.get_event_loop().run_in_executor(
+                None, bedrock.analyze, alert, loki_lines, vm_samples, runbook
+            )
     else:
         # boto3 is sync — offload to a thread so we don't block the loop.
         summary = await asyncio.get_event_loop().run_in_executor(
@@ -65,6 +80,7 @@ async def _analyze_alert(alert: dict, group_key: str | None) -> None:
         "vm_samples": len(vm_samples),
         "runbook_matched": bool(runbook) and not runbook.startswith("# Default runbook"),
         "agent_iterations": iterations,
+        "agent_fallback": agent_fallback,
         "summary": summary,
         "fallback": summary is None,
     }

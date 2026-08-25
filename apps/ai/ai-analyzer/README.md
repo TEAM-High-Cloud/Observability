@@ -1,7 +1,7 @@
 # ai-analyzer
 
 Alertmanager → AI Analyzer → Slack thread reply 구조의 알람 enricher.
-Bedrock(Claude Haiku 4.5)로 원인 요약 + 읽기 전용 조사 명령어를 생성해
+Bedrock(Amazon Nova Pro)으로 원인 요약 + 읽기 전용 조사 명령어를 생성해
 Alertmanager가 발사한 Slack 메시지의 **스레드**에 reply한다.
 
 Tracking issue: [#47](https://github.com/TEAM-High-Cloud/Observability/issues/47)
@@ -12,7 +12,7 @@ Tracking issue: [#47](https://github.com/TEAM-High-Cloud/Observability/issues/47
                   ┌─► Slack channel (즉시, ~1s)
 Alertmanager ─────┤   (route continue: true)
                   └─► ai-analyzer ─► Loki/VM 컨텍스트
-                                  └─► Bedrock Haiku 4.5
+                                  └─► Bedrock Nova Pro
                                   └─► Slack thread reply (~5-15s)
 ```
 
@@ -69,7 +69,8 @@ Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` 
                                                                ├── loki.fetch ─┐
                                                                ├── vm.fetch  ──┴─ asyncio.gather
                                                                ├── runbooks.find
-                                                               ├── bedrock.analyze (boto3 → executor)
+                                                               ├── bedrock.analyze_agentic (tool loop)
+                                                               │     └─ 무응답 시 bedrock.analyze fallback
                                                                └── slack.post_thread_reply
                                                                      ├── conversations.history로
                                                                      │   fingerprint 매칭 → parent ts
@@ -79,6 +80,7 @@ Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` 
 - 모든 단계 soft-fail: Loki/VM/Bedrock/Slack 실패해도 분석 자체는 끊지 않음.
 - Slack 토큰 없으면 thread reply 단계만 스킵, stdout JSON 로그는 그대로.
 - 부모 메시지 매칭 실패하면 채널에 새 메시지로 fallback (스레드 X).
+- Agentic loop이 최종 답변 없이 끝나면(호출 실패 / 최대 iteration 소진) 1차 컨텍스트 기반 single-shot으로 재시도. Slack footer에 `fallback=single-shot` 표기.
 
 ## 환경 변수 (chart values.env)
 
@@ -89,11 +91,11 @@ Alertmanager (continue:true)┤   메시지 본문 끝에 `fingerprint=<value>` 
 | `CONTEXT_WINDOW_MINUTES` | `15` | ±N분 컨텍스트 |
 | `LOKI_MAX_LINES` | `200` | 모델에 넘기는 로그 라인 한도 |
 | `BEDROCK_REGION` | `ap-northeast-2` | |
-| `BEDROCK_MODEL_ID` | `apac.anthropic.claude-sonnet-4-20250514-v1:0` | APAC inference profile (GLOBAL Haiku 4.5는 Marketplace 구독 이슈로 임시 우회) |
+| `BEDROCK_MODEL_ID` | `apac.amazon.nova-pro-v1:0` | APAC inference profile. Claude Haiku 4.5 / Sonnet 4로 검증했으나 GLOBAL 프로파일의 Marketplace 구독 이슈로 APAC native인 Nova Pro로 정착 |
 | `BEDROCK_MAX_TOKENS` | `1024` | |
 | `BEDROCK_TEMPERATURE` | `0.2` | 낮게 — 정확성 우선 |
-| `AGENT_ENABLED` | `true` | tool-using agentic loop 활성화. `false` 시 single-shot 경로 fallback |
-| `AGENT_MAX_ITERATIONS` | `5` | 한 알람 분석당 최대 model 호출 횟수 |
+| `AGENT_ENABLED` | `true` | tool-using agentic loop 활성화. `false`면 single-shot 경로로 **고정** (런타임 fallback이 아니라 배포 시 스위치) |
+| `AGENT_MAX_ITERATIONS` | `5` | 한 알람 분석당 최대 model 호출 횟수. 소진 시 single-shot으로 fallback |
 | `AM_URL` | `http://alertmanager.alertmanager:9093` | `list_recent_alerts` 도구의 Alertmanager v2 endpoint |
 | `SLACK_HISTORY_LOOKBACK` | `100` | thread parent 검색 시 채널 history slot 개수 |
 | `SLACK_PARENT_MAX_AGE_MIN` | `30` | N분 넘은 같은 fingerprint 부모는 stale로 간주 — 같은 알람 재발화 시 옛 thread 에 reply 박는 것 방지 |
@@ -229,13 +231,18 @@ K8s pod이 노드 metadata로 Bedrock 호출 (PR2부터 사용).
     {
       "Effect": "Allow",
       "Action": [ "bedrock:InvokeModel" ],
-      "Resource": "arn:aws:bedrock:ap-northeast-2::foundation-model/anthropic.claude-haiku-4-5-*"
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0",
+        "arn:aws:bedrock:ap-northeast-2:<ACCOUNT_ID>:inference-profile/apac.amazon.nova-pro-v1:0"
+      ]
     }
   ]
 }
 ```
 
 > IMDSv2 hop limit 2 필수.
+>
+> inference profile(`apac.*`) 사용 시 프로파일 ARN과 그 뒤의 foundation model ARN **둘 다** 허용해야 `AccessDeniedException`이 나지 않는다.
 
 ### 4. 첫 이미지 배포 (자동화됨)
 

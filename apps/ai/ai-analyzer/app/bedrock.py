@@ -1,8 +1,12 @@
-"""Bedrock Claude Haiku 4.5 client for alert analysis.
+"""Bedrock (Amazon Nova Pro) client for alert analysis.
 
-Single-shot LLM call: assembles the alert + Loki/VM context + matched
-runbook into one prompt, returns the model's text reply (or None on
-failure so the caller can fall back).
+Two entry points:
+  - ``analyze``          single-shot; one prompt, one reply.
+  - ``analyze_agentic``  tool-using loop; the model may pull extra context.
+
+Both assemble the alert + Loki/VM context + matched runbook into the
+1차 컨텍스트 and return the model's text reply, or None on failure so the
+caller can degrade (see main.py: agentic → single-shot fallback).
 
 Prompt caching is intentionally not enabled in this baseline so the
 boilerplate stays minimal; revisit once the call path is proven.
@@ -21,9 +25,11 @@ import boto3
 log = logging.getLogger("ai-analyzer.bedrock")
 
 REGION = os.getenv("BEDROCK_REGION", "ap-northeast-2")
+# Keep in sync with chart/values.yaml. APAC inference profile — Amazon-native,
+# so no Marketplace subscription is required in ap-northeast-2.
 MODEL_ID = os.getenv(
     "BEDROCK_MODEL_ID",
-    "anthropic.claude-haiku-4-5-20251001-v1:0",
+    "apac.amazon.nova-pro-v1:0",
 )
 MAX_TOKENS = int(os.getenv("BEDROCK_MAX_TOKENS", "1024"))
 TEMPERATURE = float(os.getenv("BEDROCK_TEMPERATURE", "0.2"))
@@ -305,8 +311,14 @@ async def analyze_agentic(
     request a tool call (tool_use); we run the tool, append the result, and
     let the model continue. Guard rails:
       - max iterations = AGENT_MAX_ITERATIONS
-      - duplicate (tool, args) detection breaks the loop early
-    Falls back to None on any Bedrock failure so the caller can degrade.
+      - duplicate (tool, args) calls are refused with an error toolResult
+        that nudges the model to conclude; the loop itself keeps running
+      - every tool is read-only, and Loki limits are clamped server-side
+
+    Returns (None, iterations) if Bedrock raises, or if the loop is exhausted
+    while the model is still asking for tools. main.py treats both as a
+    signal to fall back to the single-shot path rather than post an empty
+    analysis.
     """
     client = _client_lazy()
     user_prompt = _build_user(alert, loki_lines, vm_samples, runbook)

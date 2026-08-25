@@ -158,6 +158,8 @@ def _format_blocks(result: dict) -> list[dict]:
     )
     if iters:
         footer += f" · agent_iters={iters}"
+    if result.get("agent_fallback"):
+        footer += " · fallback=single-shot"
 
     # Slack section text caps at 3000 chars; truncate with a marker.
     if len(summary) > 2900:
