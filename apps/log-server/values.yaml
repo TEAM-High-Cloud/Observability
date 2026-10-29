@@ -180,32 +180,6 @@ extraObjects:
                     |~ "(?i)out of memory|oom-killer|killed process"
                   threshold: 'OOM signature >= 1 line in 2m'
 
-              - alert: FilesystemPressureLogDetected
-                expr: >-
-                  sum by (k8s_cluster_name) (
-                  count_over_time({k8s_cluster_name=~"pc1|pc2",
-                  log_file_name="syslog"}
-                  |~ "(?i)no space left|disk full|read-only file system|filesystem.*full" [5m])
-                  ) > 0
-                for: 0m
-                labels:
-                  severity: warning
-                  cluster: '{{ `{{ $labels.k8s_cluster_name }}` }}'
-                  source: loki
-                  category: filesystem
-                annotations:
-                  summary: >-
-                    Filesystem pressure log detected on
-                    {{ `{{ $labels.k8s_cluster_name }}` }}
-                  description: >-
-                    Host syslog contains filesystem pressure signals on
-                    {{ `{{ $labels.k8s_cluster_name }}` }}.
-                  logql_context_query: >-
-                    {k8s_cluster_name="{{ `{{ $labels.k8s_cluster_name }}` }}",
-                    log_file_name="syslog"}
-                    |~ "(?i)no space left|disk full|read-only file system|filesystem.*full"
-                  threshold: 'filesystem pressure signature >= 1 line in 5m'
-
               - alert: HostSyslogSilent
                 expr: >-
                   absent_over_time({k8s_cluster_name="pc1",
